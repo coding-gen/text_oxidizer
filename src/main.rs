@@ -71,6 +71,8 @@ fn test_open_reader() {
     }
 }
 
+//Tokenizes test.txt by looping through each line with tokenize_line.
+//Assumes you have a test.txt in the current crate location
 fn test_tokenize_line() {
     let mut filepath = env::current_dir().unwrap();
     let mut outvec: Vec<String> = Vec::new();
@@ -96,6 +98,8 @@ fn test_tokenize_line() {
     }
 }
 
+//Basically same as test_tokenize_line, except hands the reader to tokenize_reader
+//Assumes you have a test.txt in the current crate location
 fn test_tokenize_reader() {
     let mut filepath = env::current_dir().unwrap();
     let mut outvec: Vec<String> = Vec::new();
