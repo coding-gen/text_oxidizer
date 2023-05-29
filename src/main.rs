@@ -5,6 +5,16 @@ use std::ffi::OsStr;
 use std::fs::File;
 use std::io::{BufRead, BufReader, Read};
 
+/// Print a passed usage error message and exit.
+/// Will panic instead if in test configuration.
+fn error(err: &str) -> ! {
+    eprintln!("{}", err);
+    #[cfg(not(test))]
+    std::process::exit(1);
+    #[cfg(test)]
+    panic!("error");
+}
+
 //https://users.rust-lang.org/t/how-to-return-bufreader/34651/6
 ///Accepts a file path and returns a Result containing either a BufReader or an IO error
 fn open_reader(fpath: &OsStr) -> Result<BufReader<Box<dyn Read>>, std::io::Error> {
@@ -14,6 +24,7 @@ fn open_reader(fpath: &OsStr) -> Result<BufReader<Box<dyn Read>>, std::io::Error
 
 //https://docs.rs/regex/latest/regex/
 //Using lazy_static as recommended by regex crate docs
+//Ignores invalid returns from the regex
 fn tokenize_line(line: &str) -> Vec<String> {
     let mut tokens = Vec::new();
 
@@ -26,18 +37,23 @@ fn tokenize_line(line: &str) -> Vec<String> {
 
     for group in REGTOKEN.captures_iter(line) {
         println!("{:?}", group);
-        for c in group.iter().skip(1) {
-            tokens.push(c.unwrap().as_str().to_string())
+        for c in group.iter().skip(1).flatten() {
+            tokens.push(c.as_str().to_string());
         }
     }
     tokens
 }
 
 // Takes in a Buffered Reader and returns a Vec<String> of the tokens found
+//Errors if the BufReader contains invalid information.
 fn tokenize_reader(filein: BufReader<Box<dyn Read>>) -> Vec<String> {
     let mut outvec: Vec<String> = Vec::new();
     for line in filein.lines() {
-        outvec.append(&mut tokenize_line(&line.unwrap()));
+        if let Ok(p) = line {
+            outvec.append(&mut tokenize_line(&p));
+        } else {
+            error("tokenize_reader: Bad output from BufReader");
+        }
     }
     outvec
 }
