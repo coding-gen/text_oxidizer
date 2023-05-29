@@ -20,7 +20,8 @@ fn tokenize_line(line: &str) -> Vec<String> {
     println!("tokenize: {}", line);
 
     lazy_static! {
-        static ref REGTOKEN: Regex = Regex::new(r"\S+").unwrap();
+        static ref REGTOKEN: Regex =
+            Regex::new(r#"[[:alpha:]']+|[0-9]+|[?,.!:"=_\-%#@\&\]\)]"#).unwrap();
     }
 
     for group in REGTOKEN.captures_iter(line) {
