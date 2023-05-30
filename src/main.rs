@@ -5,6 +5,9 @@ use std::ffi::OsStr;
 use std::fs::File;
 use std::io::{BufRead, BufReader, Read};
 
+mod debug_tools;
+pub use crate::debug_tools::*;
+
 /// Print a passed usage error message and exit.
 /// Will panic instead if in test configuration.
 fn error(err: &str) -> ! {
@@ -27,19 +30,16 @@ fn open_reader(fpath: &OsStr) -> Result<BufReader<Box<dyn Read>>, std::io::Error
 //Ignores invalid returns from the regex
 fn tokenize_line(line: &str) -> Vec<String> {
     let mut tokens = Vec::new();
-
-    println!("tokenize: {}", line);
-
     lazy_static! {
         static ref REGTOKEN: Regex =
             Regex::new(r#"[[:alpha:]']+|[0-9]+|[?,.!:"=_\-%#@\&\]\)]"#).unwrap();
     }
+    for cap in REGTOKEN.captures_iter(line) {
+        let text = &cap[0];
+        println!("token: {}", text);
+        print_type_of(&text); 
 
-    for group in REGTOKEN.captures_iter(line) {
-        println!("{:?}", group);
-        for c in group.iter().skip(1).flatten() {
-            tokens.push(c.as_str().to_string());
-        }
+        tokens.push(text.to_owned());
     }
     tokens
 }
@@ -59,6 +59,11 @@ fn tokenize_reader(filein: BufReader<Box<dyn Read>>) -> Vec<String> {
 }
 
 fn main() {
+    let test_text = "Here is some test text. Question though, \n Does it do what we want?";
+
+    for line in test_text.lines() {
+        println!("Result from tokenizer: {:?}", tokenize_line(&line));
+    }
     test_open_reader();
     test_tokenize_line();
     test_tokenize_reader();
@@ -72,16 +77,16 @@ fn test_open_reader() {
     let mut filepath = env::current_dir().unwrap();
     filepath.push("test.txt");
     let ostringpath = filepath.into_os_string();
-    if let Ok(seepath) = ostringpath.clone().into_string() {
-        println!("{}", seepath);
+    if let Ok(_seepath) = ostringpath.clone().into_string() {
+        // println!("{}", seepath);
     } else {
         println!("Filepath not displayable - continuing...")
     }
     let nreader = open_reader(&ostringpath);
 
     if let Ok(linereader) = nreader {
-        for line in linereader.lines() {
-            println!("{}", line.unwrap())
+        for _line in linereader.lines() {
+            // println!("{}", line.unwrap())
         }
     } else {
         println!("Invalid filepath")
@@ -95,8 +100,8 @@ fn test_tokenize_line() {
     let mut outvec: Vec<String> = Vec::new();
     filepath.push("test.txt");
     let ostringpath = filepath.into_os_string();
-    if let Ok(seepath) = ostringpath.clone().into_string() {
-        println!("{}", seepath);
+    if let Ok(_seepath) = ostringpath.clone().into_string() {
+        // println!("{}", seepath);
     } else {
         println!("Filepath not displayable - continuing...")
     }
@@ -122,8 +127,8 @@ fn test_tokenize_reader() {
     let mut outvec: Vec<String> = Vec::new();
     filepath.push("test.txt");
     let ostringpath = filepath.into_os_string();
-    if let Ok(seepath) = ostringpath.clone().into_string() {
-        println!("{}", seepath);
+    if let Ok(_seepath) = ostringpath.clone().into_string() {
+        //println!("{}", seepath);
     } else {
         println!("Filepath not displayable - continuing...")
     }
