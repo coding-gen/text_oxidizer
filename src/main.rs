@@ -22,23 +22,21 @@ fn error(err: &str) -> ! {
 }
 
 #[derive(Debug)]
-struct WordTarget {
+struct LineTarget {
     tokens: Vec<String>,
     target: String,
 }
 
-fn parse_csv_to_wordtarget(fpath: &OsStr) -> Result<Vec<WordTarget>, Box<dyn Error>> {
+fn parse_csv_to_linetarget(fpath: &OsStr) -> Result<Vec<LineTarget>, Box<dyn Error>> {
     let mut out = Vec::new();
     let mut reader = Reader::from_path(fpath)?;
 
-    for result in reader.records() {
+    for result in reader.byte_records() {
         let record = result?;
-        println!("{:?}", record);
-        input!("Enter to continue...");
-        let tokens = tokenize_line(record.get(1).unwrap());
-        let target = record.get(0).unwrap().to_string();
+        let tokens = tokenize_line(&String::from_utf8_lossy(record.get(1).unwrap()));
+        let target = String::from_utf8_lossy(record.get(0).unwrap()).into_owned();
 
-        let newout = WordTarget { tokens, target };
+        let newout = LineTarget { tokens, target };
 
         out.push(newout)
     }
@@ -93,7 +91,7 @@ fn main() {
     // test_open_reader();
     // test_tokenize_line();
     // test_tokenize_reader();
-    test_parse_csv_to_wordtarget();
+    test_parse_csv_to_linetarget();
 }
 
 //Test functions.  May or may not be unit tests.
@@ -172,7 +170,7 @@ fn test_tokenize_reader() {
     }
 }
 
-fn test_parse_csv_to_wordtarget() {
+fn test_parse_csv_to_linetarget() {
     let mut filepath = env::current_dir().unwrap();
     filepath.push("Twitter-sentiment-self-drive-DFE-Test.csv");
 
@@ -183,9 +181,9 @@ fn test_parse_csv_to_wordtarget() {
         println!("Filepath not displayable - continuing...")
     }
 
-    let outvec = parse_csv_to_wordtarget(&ostringpath).unwrap();
+    let outvec = parse_csv_to_linetarget(&ostringpath).unwrap();
 
-    // for i in 0..2 {
-    //     println!("{:?}", outvec.get(i))
-    // }
+    for i in 0..8 {
+        println!("{:?}", outvec.get(i))
+    }
 }
