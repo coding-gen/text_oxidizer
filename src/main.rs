@@ -33,7 +33,7 @@ fn parse_csv_to_linetarget(fpath: &OsStr) -> Result<Vec<LineTarget>, Box<dyn Err
 
     for result in reader.byte_records() {
         let record = result?;
-        let tokens = tokenize_line(&String::from_utf8_lossy(record.get(1).unwrap()));
+        let tokens = tokenize_line_alphas(&String::from_utf8_lossy(record.get(1).unwrap()));
         let target = String::from_utf8_lossy(record.get(0).unwrap()).into_owned();
 
         let newout = LineTarget { tokens, target };
@@ -59,6 +59,23 @@ fn tokenize_line(line: &str) -> Vec<String> {
     lazy_static! {
         static ref REGTOKEN: Regex =
             Regex::new(r#"[[:alpha:]']+|[0-9]+|[?,.!:"=_\-%#@\&\]\)]"#).unwrap();
+    }
+    for cap in REGTOKEN.captures_iter(line) {
+        let text = &cap[0];
+
+        tokens.push(text.to_owned());
+    }
+    tokens
+}
+
+//https://docs.rs/regex/latest/regex/
+//Using lazy_static as recommended by regex crate docs
+//Ignores invalid returns from the regex
+//Only returns alpha sequences, including apostraphies
+fn tokenize_line_alphas(line: &str) -> Vec<String> {
+    let mut tokens = Vec::new();
+    lazy_static! {
+        static ref REGTOKEN: Regex = Regex::new(r#"[[:alpha:]']+"#).unwrap();
     }
     for cap in REGTOKEN.captures_iter(line) {
         let text = &cap[0];
