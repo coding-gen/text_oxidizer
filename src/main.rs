@@ -36,7 +36,10 @@ struct TokenOccurence {
     occurences: usize,
 }
 
-fn create_bayes(input: Vec<LineTarget>, target: &str) -> HashMap<String, TokenOccurence> {
+// Takes in a vec of LineTarget and the target to match against.
+// Outputs a HashMap of TokenOccurence for further processing.
+// Intended for use in Naive Bayes.
+fn create_occurence_hash(input: Vec<LineTarget>, target: &str) -> HashMap<String, TokenOccurence> {
     let mut bayes: HashMap<String, TokenOccurence> = HashMap::new();
     for line in input {
         for token in line.tokens {
@@ -145,7 +148,7 @@ fn main() {
     // test_tokenize_line();
     // test_tokenize_reader();
     // test_parse_csv_to_linetarget();
-    test_create_bayes();
+    test_create_occurence_hash();
 }
 
 //Test functions.  May or may not be unit tests.
@@ -224,6 +227,8 @@ fn test_tokenize_reader() {
     }
 }
 
+//Assumes Twitter-sentiment-self-drive-DFE-Test.csv is in the crate root directory
+//Scans file into a vec of LineTargets and displays the first 8 lines.
 fn test_parse_csv_to_linetarget() {
     let mut filepath = env::current_dir().unwrap();
     filepath.push("Twitter-sentiment-self-drive-DFE-Test.csv");
@@ -242,7 +247,11 @@ fn test_parse_csv_to_linetarget() {
     }
 }
 
-fn test_create_bayes() {
+//Assumes Twitter-sentiment-self-drive-DFE-Test.csv is in the crate root directory
+//Creates a HashMap of TokenOccurence
+//Displays by iterating through the Hashmap.  Asks to terminate at each key value.
+//Iterator is unordered.
+fn test_create_occurence_hash() {
     let mut filepath = env::current_dir().unwrap();
     let target = "not_relevant";
     filepath.push("Twitter-sentiment-self-drive-DFE-Test.csv");
@@ -255,12 +264,12 @@ fn test_create_bayes() {
     }
 
     let outvec = parse_csv_to_linetarget(&ostringpath).unwrap();
-    let bayes = create_bayes(outvec, target);
+    let bayes = create_occurence_hash(outvec, target);
 
     for line in bayes.iter() {
         println!("Key: {}", line.0);
         println!("TokenOccurence: {:?}", line.1);
-        if input!("End?") == "Q" {
+        if input!("Continue? Enter 'N' to exit: ").to_uppercase() == "N" {
             std::process::exit(0);
         }
     }
