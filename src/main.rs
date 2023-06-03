@@ -18,6 +18,11 @@ fn error(err: &str) -> ! {
     panic!("error");
 }
 
+struct WordTarget {
+    tokens: Vec<String>,
+    target: String,
+}
+
 //https://users.rust-lang.org/t/how-to-return-bufreader/34651/6
 ///Accepts a file path and returns a Result containing either a BufReader or an IO error
 fn open_reader(fpath: &OsStr) -> Result<BufReader<Box<dyn Read>>, std::io::Error> {
@@ -37,7 +42,7 @@ fn tokenize_line(line: &str) -> Vec<String> {
     for cap in REGTOKEN.captures_iter(line) {
         let text = &cap[0];
         println!("token: {}", text);
-        print_type_of(&text); 
+        print_type_of(&text);
 
         tokens.push(text.to_owned());
     }
