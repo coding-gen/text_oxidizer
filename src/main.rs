@@ -1,6 +1,9 @@
+use csv::Reader;
 use lazy_static::lazy_static;
+use prompted::input;
 use regex::Regex;
 use std::env;
+use std::error::Error;
 use std::ffi::OsStr;
 use std::fs::File;
 use std::io::{BufRead, BufReader, Read};
@@ -18,14 +21,34 @@ fn error(err: &str) -> ! {
     panic!("error");
 }
 
+#[derive(Debug)]
 struct WordTarget {
     tokens: Vec<String>,
     target: String,
 }
 
+fn parse_csv_to_wordtarget(fpath: &OsStr) -> Result<Vec<WordTarget>, Box<dyn Error>> {
+    let mut out = Vec::new();
+    let mut reader = Reader::from_path(fpath)?;
+
+    for result in reader.records() {
+        let record = result?;
+        println!("{:?}", record);
+        input!("Enter to continue...");
+        let tokens = tokenize_line(record.get(1).unwrap());
+        let target = record.get(0).unwrap().to_string();
+
+        let newout = WordTarget { tokens, target };
+
+        out.push(newout)
+    }
+
+    Ok(out)
+}
+
 //https://users.rust-lang.org/t/how-to-return-bufreader/34651/6
 ///Accepts a file path and returns a Result containing either a BufReader or an IO error
-fn open_reader(fpath: &OsStr) -> Result<BufReader<Box<dyn Read>>, std::io::Error> {
+fn open_reader(fpath: &OsStr) -> Result<BufReader<Box<dyn Read>>, Box<dyn Error>> {
     let fileobj = File::open(fpath)?;
     Ok(BufReader::new(Box::new(fileobj)))
 }
@@ -41,8 +64,6 @@ fn tokenize_line(line: &str) -> Vec<String> {
     }
     for cap in REGTOKEN.captures_iter(line) {
         let text = &cap[0];
-        println!("token: {}", text);
-        print_type_of(&text);
 
         tokens.push(text.to_owned());
     }
@@ -64,14 +85,15 @@ fn tokenize_reader(filein: BufReader<Box<dyn Read>>) -> Vec<String> {
 }
 
 fn main() {
-    let test_text = "Here is some test text. Question though, \n Does it do what we want?";
+    // let test_text = "Here is some test text. Question though, \n Does it do what we want?";
 
-    for line in test_text.lines() {
-        println!("Result from tokenizer: {:?}", tokenize_line(&line));
-    }
-    test_open_reader();
-    test_tokenize_line();
-    test_tokenize_reader();
+    // for line in test_text.lines() {
+    //     println!("Result from tokenizer: {:?}", tokenize_line(&line));
+    // }
+    // test_open_reader();
+    // test_tokenize_line();
+    // test_tokenize_reader();
+    test_parse_csv_to_wordtarget();
 }
 
 //Test functions.  May or may not be unit tests.
@@ -148,4 +170,22 @@ fn test_tokenize_reader() {
     for s in outvec.iter() {
         println!("{}", s);
     }
+}
+
+fn test_parse_csv_to_wordtarget() {
+    let mut filepath = env::current_dir().unwrap();
+    filepath.push("Twitter-sentiment-self-drive-DFE-Test.csv");
+
+    let ostringpath = filepath.into_os_string();
+    if let Ok(_seepath) = ostringpath.clone().into_string() {
+        //println!("{}", seepath);
+    } else {
+        println!("Filepath not displayable - continuing...")
+    }
+
+    let outvec = parse_csv_to_wordtarget(&ostringpath).unwrap();
+
+    // for i in 0..2 {
+    //     println!("{:?}", outvec.get(i))
+    // }
 }
