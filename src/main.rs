@@ -1,3 +1,4 @@
+// use core::num::dec2flt::number::Number;
 use csv::Reader;
 use lazy_static::lazy_static;
 use prompted::input;
@@ -32,36 +33,73 @@ struct LineTarget {
 //Struct for pairing a number of target matches and token occurances for Bayes analysis
 #[derive(Debug)]
 struct TokenOccurence {
-    matches: usize,
-    occurences: usize,
+    classA: usize,
+    classB: usize,
+}
+
+//Pair token to class occurence probabilities
+//For use in Naive Bayes
+#[derive(Debug)]
+struct TokenProbabilities {
+    classA: usize,
+    classB: usize,
+}
+
+//Captures number of words in each class
+//For use in Naive Bayes
+#[derive(Debug)]
+struct NumberWords {
+    classA: usize,
+    classB: usize,
 }
 
 // Takes in a vec of LineTarget and the target to match against.
 // Outputs a HashMap of TokenOccurence for further processing.
 // Intended for use in Naive Bayes.
-fn create_occurence_hash(input: Vec<LineTarget>, target: &str) -> HashMap<String, TokenOccurence> {
-    let mut bayes: HashMap<String, TokenOccurence> = HashMap::new();
+fn bayes_preprocess(
+    input: &Vec<LineTarget>,
+    target: &str,
+) -> (HashMap<String, TokenOccurence>, NumberWords) {
+    let mut occurence: HashMap<String, TokenOccurence> = HashMap::new();
+    let mut numwords = NumberWords {
+        classA: 0,
+        classB: 0,
+    };
     for line in input {
-        for token in line.tokens {
-            if !bayes.contains_key(&token) {
-                bayes.insert(
+        for token in &line.tokens {
+            if !occurence.contains_key(token) {
+                occurence.insert(
                     token.clone(),
                     TokenOccurence {
-                        matches: 0,
-                        occurences: 0,
+                        classA: 0,
+                        classB: 0,
                     },
                 );
             }
-            let inplace = bayes.get_mut(&token).unwrap();
-            inplace.occurences += 1;
+            let inplace = occurence.get_mut(token).unwrap();
             if line.target == target {
-                inplace.matches += 1;
+                inplace.classA += 1;
+                numwords.classA += 1;
+            } else {
+                inplace.classB += 1;
+                numwords.classB += 1;
             }
         }
     }
 
-    bayes
+    (occurence, numwords)
 }
+
+// fn calculate_naive_bayes(
+//     input: HashMap<String, TokenOccurence>,
+// ) -> HashMap<String, TokenProbabilities> {
+//     let mut bayes = HashMap::new();
+//     for item in input {
+//         let classA = item.1.
+//         bayes.insert(item.0,
+//         TokenOccurence);
+//     }
+// }
 
 //Accepts a path to a CSV file.  Just hands up any errors it recieves.
 //Otherwise returns a Vec of LineTargets for further processing.
@@ -148,7 +186,7 @@ fn main() {
     // test_tokenize_line();
     // test_tokenize_reader();
     // test_parse_csv_to_linetarget();
-    test_create_occurence_hash();
+    test_bayes_preprocess();
 }
 
 //Test functions.  May or may not be unit tests.
@@ -251,7 +289,7 @@ fn test_parse_csv_to_linetarget() {
 //Creates a HashMap of TokenOccurence
 //Displays by iterating through the Hashmap.  Asks to terminate at each key value.
 //Iterator is unordered.
-fn test_create_occurence_hash() {
+fn test_bayes_preprocess() {
     let mut filepath = env::current_dir().unwrap();
     let target = "not_relevant";
     filepath.push("Twitter-sentiment-self-drive-DFE-Test.csv");
@@ -264,9 +302,10 @@ fn test_create_occurence_hash() {
     }
 
     let outvec = parse_csv_to_linetarget(&ostringpath).unwrap();
-    let bayes = create_occurence_hash(outvec, target);
+    let bayes = bayes_preprocess(&outvec, target);
 
-    for line in bayes.iter() {
+    println!("{:?}", bayes.1);
+    for line in bayes.0.iter() {
         println!("Key: {}", line.0);
         println!("TokenOccurence: {:?}", line.1);
         if input!("Continue? Enter 'N' to exit: ").to_uppercase() == "N" {
