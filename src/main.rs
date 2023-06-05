@@ -110,6 +110,22 @@ fn generate_naive_bayes_model(
     bayes
 }
 
+fn generate_naive_bayes_class_probability(
+    model: HashMap<String, TokenProbabilities>,
+    line: Vec<String>,
+) -> TokenProbabilities {
+    let mut class_a = 0_f64;
+    let mut class_b = 0_f64;
+
+    for token in line {
+        if let Some(result) = model.get(&token) {
+            class_a = class_a * result.class_a;
+            class_b = class_b * result.class_b;
+        }
+    }
+    TokenProbabilities { class_a, class_b }
+}
+
 fn save_naive_bayes_model(
     fpath: &OsStr,
     to_save: HashMap<String, TokenProbabilities>,
@@ -343,7 +359,7 @@ fn test_bayes_preprocess() {
     }
 }
 
-fn test_naive_bayes() {
+fn test_naive_bayes_modeling() {
     let mut filepath = env::current_dir().unwrap();
     let mut savepath = env::current_dir().unwrap();
     let target = "not_relevant";
@@ -368,4 +384,32 @@ fn test_naive_bayes() {
     let bayes = bayes_preprocess(&outvec, target);
     let model = generate_naive_bayes_model(bayes.0, bayes.1);
     save_naive_bayes_model(&ostringsavepath, model).unwrap();
+}
+
+fn test_naive_bayes_against_test() {
+    let mut trainpath = env::current_dir().unwrap();
+    let mut testpath = env::current_dir().unwrap();
+    let target = "not_relevant";
+    trainpath.push("Twitter-sentiment-self-drive-DFE-Training.csv");
+    testpath.push("Twitter-sentiment-self-drive-DFE-Test.csv");
+
+    let ostrtrainpath = trainpath.into_os_string();
+    if let Ok(_seepath) = ostrtrainpath.clone().into_string() {
+        //println!("{}", seepath);
+    } else {
+        println!("Filepath not displayable - continuing...")
+    }
+
+    let ostrtestpath = testpath.into_os_string();
+    if let Ok(_seepath) = ostrtestpath.clone().into_string() {
+        //println!("{}", seepath);
+    } else {
+        println!("Savepath not displayable - continuing...")
+    }
+
+    let outvec = parse_csv_to_linetarget(&ostrtrainpath).unwrap();
+    let testvec = parse_csv_to_linetarget(&ostrtestpath).unwrap();
+    let bayes = bayes_preprocess(&outvec, target);
+    let model = generate_naive_bayes_model(bayes.0, bayes.1);
+    //  Finish test loop
 }
