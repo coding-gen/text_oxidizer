@@ -1,5 +1,5 @@
 // use core::num::dec2flt::number::Number;
-use csv::Reader;
+use csv::{Reader, Writer};
 use lazy_static::lazy_static;
 use prompted::input;
 use regex::Regex;
@@ -33,24 +33,24 @@ struct LineTarget {
 //Struct for pairing a number of target matches and token occurances for Bayes analysis
 #[derive(Debug)]
 struct TokenOccurence {
-    classA: usize,
-    classB: usize,
+    class_a: usize,
+    class_b: usize,
 }
 
 //Pair token to class occurence probabilities
 //For use in Naive Bayes
 #[derive(Debug)]
 struct TokenProbabilities {
-    classA: usize,
-    classB: usize,
+    class_a: usize,
+    class_b: usize,
 }
 
 //Captures number of words in each class
 //For use in Naive Bayes
 #[derive(Debug)]
 struct NumberWords {
-    classA: usize,
-    classB: usize,
+    class_a: usize,
+    class_b: usize,
 }
 
 // Takes in a vec of LineTarget and the target to match against.
@@ -62,8 +62,8 @@ fn bayes_preprocess(
 ) -> (HashMap<String, TokenOccurence>, NumberWords) {
     let mut occurence: HashMap<String, TokenOccurence> = HashMap::new();
     let mut numwords = NumberWords {
-        classA: 0,
-        classB: 0,
+        class_a: 0,
+        class_b: 0,
     };
     for line in input {
         for token in &line.tokens {
@@ -71,18 +71,18 @@ fn bayes_preprocess(
                 occurence.insert(
                     token.clone(),
                     TokenOccurence {
-                        classA: 0,
-                        classB: 0,
+                        class_a: 0,
+                        class_b: 0,
                     },
                 );
             }
             let inplace = occurence.get_mut(token).unwrap();
             if line.target == target {
-                inplace.classA += 1;
-                numwords.classA += 1;
+                inplace.class_a += 1;
+                numwords.class_a += 1;
             } else {
-                inplace.classB += 1;
-                numwords.classB += 1;
+                inplace.class_b += 1;
+                numwords.class_b += 1;
             }
         }
     }
@@ -90,16 +90,40 @@ fn bayes_preprocess(
     (occurence, numwords)
 }
 
-// fn calculate_naive_bayes(
-//     input: HashMap<String, TokenOccurence>,
-// ) -> HashMap<String, TokenProbabilities> {
-//     let mut bayes = HashMap::new();
-//     for item in input {
-//         let classA = item.1.
-//         bayes.insert(item.0,
-//         TokenOccurence);
-//     }
-// }
+fn generate_naive_bayes_model(
+    input: HashMap<String, TokenOccurence>,
+    wordcount: NumberWords,
+) -> HashMap<String, TokenProbabilities> {
+    let mut bayes = HashMap::new();
+    for item in input {
+        let probabilities = TokenProbabilities {
+            class_a: item.1.class_a / wordcount.class_a,
+            class_b: item.1.class_b / wordcount.class_b,
+        };
+        bayes.insert(item.0.clone(), probabilities);
+    }
+
+    bayes
+}
+
+fn save_naive_bayes_model(
+    fpath: &OsStr,
+    to_save: HashMap<String, TokenProbabilities>,
+) -> Result<(), Box<dyn Error>> {
+    let mut wtr = Writer::from_path(fpath)?;
+
+    wtr.write_record(["word", "class_a", "class_b"])?;
+
+    for item in to_save {
+        wtr.write_record(&[
+            item.0,
+            item.1.class_a.to_string(),
+            item.1.class_b.to_string(),
+        ])?;
+    }
+
+    Ok(())
+}
 
 //Accepts a path to a CSV file.  Just hands up any errors it recieves.
 //Otherwise returns a Vec of LineTargets for further processing.
@@ -186,7 +210,8 @@ fn main() {
     // test_tokenize_line();
     // test_tokenize_reader();
     // test_parse_csv_to_linetarget();
-    test_bayes_preprocess();
+    // test_bayes_preprocess();
+    test_naive_bayes();
 }
 
 //Test functions.  May or may not be unit tests.
@@ -312,4 +337,31 @@ fn test_bayes_preprocess() {
             std::process::exit(0);
         }
     }
+}
+
+fn test_naive_bayes() {
+    let mut filepath = env::current_dir().unwrap();
+    let mut savepath = env::current_dir().unwrap();
+    let target = "not_relevant";
+    filepath.push("Twitter-sentiment-self-drive-DFE-Test.csv");
+    savepath.push("MODEL-Twitter-sentiment-self-drive-DFE-Test.csv");
+
+    let ostringpath = filepath.into_os_string();
+    if let Ok(_seepath) = ostringpath.clone().into_string() {
+        //println!("{}", seepath);
+    } else {
+        println!("Filepath not displayable - continuing...")
+    }
+
+    let ostringsavepath = savepath.into_os_string();
+    if let Ok(_seepath) = ostringsavepath.clone().into_string() {
+        //println!("{}", seepath);
+    } else {
+        println!("Savepath not displayable - continuing...")
+    }
+
+    let outvec = parse_csv_to_linetarget(&ostringpath).unwrap();
+    let bayes = bayes_preprocess(&outvec, target);
+    let model = generate_naive_bayes_model(bayes.0, bayes.1);
+    save_naive_bayes_model(&ostringsavepath, model).unwrap();
 }
