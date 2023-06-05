@@ -33,24 +33,24 @@ struct LineTarget {
 //Struct for pairing a number of target matches and token occurances for Bayes analysis
 #[derive(Debug)]
 struct TokenOccurence {
-    class_a: usize,
-    class_b: usize,
+    class_a: i32,
+    class_b: i32,
 }
 
 //Pair token to class occurence probabilities
 //For use in Naive Bayes
 #[derive(Debug)]
 struct TokenProbabilities {
-    class_a: usize,
-    class_b: usize,
+    class_a: f64,
+    class_b: f64,
 }
 
 //Captures number of words in each class
 //For use in Naive Bayes
 #[derive(Debug)]
 struct NumberWords {
-    class_a: usize,
-    class_b: usize,
+    class_a: i32,
+    class_b: i32,
 }
 
 // Takes in a vec of LineTarget and the target to match against.
@@ -90,6 +90,10 @@ fn bayes_preprocess(
     (occurence, numwords)
 }
 
+//  Takes in output of the preprocessor - a hashmap of string and occurance pairs, and the class wordcounts.
+//  Outputs a hashmap of strings and associated class probabilities.
+//  Should look at float math, and the associated i32 variables.  Some datasets may have extremely large wordcount.
+//  Could potentially handle by chunking out the processing and aggregating the resulting probabilities.
 fn generate_naive_bayes_model(
     input: HashMap<String, TokenOccurence>,
     wordcount: NumberWords,
@@ -97,8 +101,8 @@ fn generate_naive_bayes_model(
     let mut bayes = HashMap::new();
     for item in input {
         let probabilities = TokenProbabilities {
-            class_a: item.1.class_a / wordcount.class_a,
-            class_b: item.1.class_b / wordcount.class_b,
+            class_a: f64::from(item.1.class_b) / f64::from(wordcount.class_b),
+            class_b: f64::from(item.1.class_b) / f64::from(wordcount.class_b),
         };
         bayes.insert(item.0.clone(), probabilities);
     }
@@ -343,8 +347,8 @@ fn test_naive_bayes() {
     let mut filepath = env::current_dir().unwrap();
     let mut savepath = env::current_dir().unwrap();
     let target = "not_relevant";
-    filepath.push("Twitter-sentiment-self-drive-DFE-Test.csv");
-    savepath.push("MODEL-Twitter-sentiment-self-drive-DFE-Test.csv");
+    filepath.push("Twitter-sentiment-self-drive-DFE-Training.csv");
+    savepath.push("MODEL-Twitter-sentiment-self-drive-DFE-Training.csv");
 
     let ostringpath = filepath.into_os_string();
     if let Ok(_seepath) = ostringpath.clone().into_string() {
