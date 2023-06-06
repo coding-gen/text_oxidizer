@@ -23,6 +23,12 @@ fn error(err: &str) -> ! {
     panic!("error");
 }
 
+fn user_exit() {
+    if input!("Continue? Enter 'N' to exit: ").to_uppercase() == "N" {
+        std::process::exit(0);
+    }
+}
+
 //Struct for pairing a token stream to a target value for training models
 #[derive(Debug)]
 struct LineTarget {
@@ -101,7 +107,7 @@ fn generate_naive_bayes_model(
     let mut bayes = HashMap::new();
     for item in input {
         let probabilities = TokenProbabilities {
-            class_a: f64::from(item.1.class_b) / f64::from(wordcount.class_b),
+            class_a: f64::from(item.1.class_a) / f64::from(wordcount.class_a),
             class_b: f64::from(item.1.class_b) / f64::from(wordcount.class_b),
         };
         bayes.insert(item.0.clone(), probabilities);
@@ -114,15 +120,20 @@ fn generate_naive_bayes_class_probability(
     model: &HashMap<String, TokenProbabilities>,
     line: &Vec<String>,
 ) -> TokenProbabilities {
-    let mut class_a = 0_f64;
-    let mut class_b = 0_f64;
+    let mut class_a = 1_f64;
+    let mut class_b = 1_f64;
 
     for token in line {
         if let Some(result) = model.get(token) {
+            // println!("{}", token);
+            // println!("{}, {}", class_a, class_b);
+            // println!("{}, {}", result.class_a, result.class_b);
+            // user_exit();
             class_a *= result.class_a;
             class_b *= result.class_b;
         }
     }
+
     TokenProbabilities { class_a, class_b }
 }
 
@@ -428,15 +439,6 @@ fn test_naive_bayes_against_test() {
     for item in testvec {
         if (item.target == target) == naive_bayes_in_class(&model, &item.tokens) {
             correct += 1;
-        }
-        println!(
-            "{}, {}, {:?}",
-            item.target,
-            target,
-            naive_bayes_in_class(&model, &item.tokens)
-        );
-        if input!("Continue? Enter 'N' to exit: ").to_uppercase() == "N" {
-            std::process::exit(0);
         }
         total += 1;
     }
