@@ -95,7 +95,7 @@ fn bayes_preprocess(
 //  Should look at float math, and the associated i32 variables.  Some datasets may have extremely large wordcount.
 //  Could potentially handle by chunking out the processing and aggregating the resulting probabilities.
 fn generate_naive_bayes_model(
-    input: HashMap<String, TokenOccurence>,
+    input: &HashMap<String, TokenOccurence>,
     wordcount: NumberWords,
 ) -> HashMap<String, TokenProbabilities> {
     let mut bayes = HashMap::new();
@@ -111,19 +111,25 @@ fn generate_naive_bayes_model(
 }
 
 fn generate_naive_bayes_class_probability(
-    model: HashMap<String, TokenProbabilities>,
-    line: Vec<String>,
+    model: &HashMap<String, TokenProbabilities>,
+    line: &Vec<String>,
 ) -> TokenProbabilities {
     let mut class_a = 0_f64;
     let mut class_b = 0_f64;
 
     for token in line {
-        if let Some(result) = model.get(&token) {
-            class_a = class_a * result.class_a;
-            class_b = class_b * result.class_b;
+        if let Some(result) = model.get(token) {
+            class_a *= result.class_a;
+            class_b *= result.class_b;
         }
     }
     TokenProbabilities { class_a, class_b }
+}
+
+fn naive_bayes_in_class(model: &HashMap<String, TokenProbabilities>, line: &Vec<String>) -> bool {
+    let result = generate_naive_bayes_class_probability(model, line);
+
+    result.class_a / result.class_b > 1.0
 }
 
 fn save_naive_bayes_model(
@@ -231,7 +237,8 @@ fn main() {
     // test_tokenize_reader();
     // test_parse_csv_to_linetarget();
     // test_bayes_preprocess();
-    test_naive_bayes();
+    // test_naive_bayes_modeling();
+    test_naive_bayes_against_test();
 }
 
 //Test functions.  May or may not be unit tests.
@@ -382,7 +389,7 @@ fn test_naive_bayes_modeling() {
 
     let outvec = parse_csv_to_linetarget(&ostringpath).unwrap();
     let bayes = bayes_preprocess(&outvec, target);
-    let model = generate_naive_bayes_model(bayes.0, bayes.1);
+    let model = generate_naive_bayes_model(&bayes.0, bayes.1);
     save_naive_bayes_model(&ostringsavepath, model).unwrap();
 }
 
@@ -410,6 +417,33 @@ fn test_naive_bayes_against_test() {
     let outvec = parse_csv_to_linetarget(&ostrtrainpath).unwrap();
     let testvec = parse_csv_to_linetarget(&ostrtestpath).unwrap();
     let bayes = bayes_preprocess(&outvec, target);
-    let model = generate_naive_bayes_model(bayes.0, bayes.1);
+    let model = generate_naive_bayes_model(&bayes.0, bayes.1);
     //  Finish test loop
+
+    let mut total = 0;
+    let mut correct = 0;
+
+    //  Should work by checking first if the current item matches the target,
+    //  then compares that result to the naive bayes prediction.
+    for item in testvec {
+        if (item.target == target) == naive_bayes_in_class(&model, &item.tokens) {
+            correct += 1;
+        }
+        println!(
+            "{}, {}, {:?}",
+            item.target,
+            target,
+            naive_bayes_in_class(&model, &item.tokens)
+        );
+        if input!("Continue? Enter 'N' to exit: ").to_uppercase() == "N" {
+            std::process::exit(0);
+        }
+        total += 1;
+    }
+
+    let percent_correct = f64::from(correct) / f64::from(total);
+
+    println!("Correct: {}", correct);
+    println!("Total: {}", total);
+    println!("Percent correct: {}", percent_correct);
 }
