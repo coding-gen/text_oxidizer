@@ -404,12 +404,18 @@ fn test_naive_bayes_modeling() {
     save_naive_bayes_model(&ostringsavepath, model).unwrap();
 }
 
+//  Tests naive bayes predictions against provided datasets.
+//  Performs well on the self-driving dataset, not super great on progressive checks - lots of false negatives
+//  Suspect the size of the dataset for the latter relative to possible classes is too small.
 fn test_naive_bayes_against_test() {
     let mut trainpath = env::current_dir().unwrap();
     let mut testpath = env::current_dir().unwrap();
     let target = "not_relevant";
     trainpath.push("Twitter-sentiment-self-drive-DFE-Training.csv");
     testpath.push("Twitter-sentiment-self-drive-DFE-Test.csv");
+    // let target = "Atheism";
+    // trainpath.push("progressive-tweet-sentiment-train.csv");
+    // testpath.push("progressive-tweet-sentiment-test.csv");
 
     let ostrtrainpath = trainpath.into_os_string();
     if let Ok(_seepath) = ostrtrainpath.clone().into_string() {
@@ -441,6 +447,13 @@ fn test_naive_bayes_against_test() {
             correct += 1;
         }
         total += 1;
+        // println!(
+        //     "{}, {}, {}",
+        //     item.target,
+        //     target,
+        //     naive_bayes_in_class(&model, &item.tokens)
+        // );
+        // user_exit();
     }
 
     let percent_correct = f64::from(correct) / f64::from(total);
