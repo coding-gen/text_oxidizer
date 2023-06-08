@@ -6,5 +6,7 @@ edition = "2021"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
+csv = "1.2.2"
 lazy_static = "1.4.0"
+prompted = "0.2.7"
 regex = "1.8.3"
