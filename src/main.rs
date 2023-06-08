@@ -254,129 +254,195 @@ fn main() {
 
 //Test functions.  May or may not be unit tests.
 
-//Assumes you have a test.txt in the current crate location
-//Reads test.txt line by line, printing each line
+/// Ensures test.csv opens and is read correctly by comparing to pre-determined input.
+/// Expects test.csv with proper contents to be in the root directory of the crate.
+/// Future update to create a temporary file with the correct contents and use this to test.
+#[test]
 fn test_open_reader() {
     let mut filepath = env::current_dir().unwrap();
-    filepath.push("test.txt");
+    filepath.push("test.csv");
     let ostringpath = filepath.into_os_string();
-    if let Ok(_seepath) = ostringpath.clone().into_string() {
-        // println!("{}", seepath);
-    } else {
-        println!("Filepath not displayable - continuing...")
-    }
-    let nreader = open_reader(&ostringpath);
+    let nreader = open_reader(&ostringpath).unwrap();
+    let mut scan = Vec::new();
 
-    if let Ok(linereader) = nreader {
-        for _line in linereader.lines() {
-            // println!("{}", line.unwrap())
-        }
-    } else {
-        println!("Invalid filepath")
+    for line in nreader.lines() {
+        scan.push(line.unwrap());
     }
+
+    assert_eq!(scan[0], r#"a,"Test, this is.""#);
+    assert_eq!(scan[1], r#"b,second line"#);
 }
 
-//Tokenizes test.txt by looping through each line with tokenize_line.
-//Assumes you have a test.txt in the current crate location
+/// Ensures test.csv tokenizes properly by comparing output of tokenize_line() to pretedermined output.
+/// Expects test.csv with proper contents to be in the root directory of the crate.
+/// Future update to create a temporary file with the correct contents and use this to test.
+#[test]
 fn test_tokenize_line() {
-    let mut filepath = env::current_dir().unwrap();
-    let mut outvec: Vec<String> = Vec::new();
-    filepath.push("test.txt");
-    let ostringpath = filepath.into_os_string();
-    if let Ok(_seepath) = ostringpath.clone().into_string() {
-        // println!("{}", seepath);
-    } else {
-        println!("Filepath not displayable - continuing...")
-    }
-    let nreader = open_reader(&ostringpath);
+    let outvec = tokenize_line("Test line, should be bee's knees!");
+    let compvec = [
+        "Test", "line", ",", "should", "be", "bee", "'", "s", "knees", "!",
+    ];
 
-    if let Ok(linereader) = nreader {
-        for line in linereader.lines() {
-            outvec.append(&mut tokenize_line(&line.unwrap()))
-        }
-    } else {
-        println!("Invalid filepath")
-    }
+    assert_eq!(outvec.len(), compvec.len());
 
-    for s in outvec.iter() {
-        println!("{}", s);
+    for i in 0..outvec.len() {
+        assert_eq!(outvec[i], compvec[i]);
     }
 }
 
-//Basically same as test_tokenize_line, except hands the reader to tokenize_reader
-//Assumes you have a test.txt in the current crate location
+/// Ensures test.csv tokenizes properly via reader by comparing output of tokenize_reader() to pretedermined output.
+/// Expects test.csv with proper contents to be in the root directory of the crate.
+/// Future update to create a temporary file with the correct contents and use this to test.
+#[test]
 fn test_tokenize_reader() {
     let mut filepath = env::current_dir().unwrap();
     let mut outvec: Vec<String> = Vec::new();
-    filepath.push("test.txt");
+    filepath.push("test.csv");
     let ostringpath = filepath.into_os_string();
-    if let Ok(_seepath) = ostringpath.clone().into_string() {
-        //println!("{}", seepath);
-    } else {
-        println!("Filepath not displayable - continuing...")
-    }
-    let nreader = open_reader(&ostringpath);
+    let nreader = open_reader(&ostringpath).unwrap();
 
-    if let Ok(linereader) = nreader {
-        outvec.append(&mut tokenize_reader(linereader))
-    } else {
-        println!("Invalid filepath")
-    }
+    let line = [
+        "a", ",", r#"""#, "Test", ",", "this", "is", ".", r#"""#, "b", ",", "second", "line",
+    ];
 
-    for s in outvec.iter() {
-        println!("{}", s);
+    outvec.append(&mut tokenize_reader(nreader));
+
+    assert_eq!(line.len(), outvec.len());
+
+    for i in 0..line.len() {
+        assert_eq!(line[i], outvec[i]);
     }
 }
 
-//Assumes Twitter-sentiment-self-drive-DFE-Test.csv is in the crate root directory
-//Scans file into a vec of LineTargets and displays the first 8 lines.
+/// Ensures output of parse_csv_to_linetarget() by comparing to test.csv.
+/// Expects test.csv with proper contents to be in the root directory of the crate.
+/// Future update to create a temporary file with the correct contents and use this to test.
+#[test]
 fn test_parse_csv_to_linetarget() {
     let mut filepath = env::current_dir().unwrap();
-    filepath.push("Twitter-sentiment-self-drive-DFE-Test.csv");
+    filepath.push("test.csv");
 
     let ostringpath = filepath.into_os_string();
-    if let Ok(_seepath) = ostringpath.clone().into_string() {
-        //println!("{}", seepath);
-    } else {
-        println!("Filepath not displayable - continuing...")
-    }
-
     let outvec = parse_csv_to_linetarget(&ostringpath).unwrap();
 
-    for i in 0..8 {
-        println!("{:?}", outvec.get(i))
+    let line_0 = ["test", "this", "is"];
+    let line_1 = ["second", "line"];
+
+    assert_eq!(
+        outvec[0].target, "a",
+        "Target mismatch: {} =/= a",
+        outvec[0].target,
+    );
+    assert_eq!(
+        outvec[1].target, "b",
+        "Target mismatch: {} =/= b",
+        outvec[1].target
+    );
+
+    assert_eq!(
+        outvec[0].tokens.len(),
+        line_0.len(),
+        "Mismatch in expected token length - expected {}, got {}",
+        line_0.len(),
+        outvec[0].tokens.len()
+    );
+
+    assert_eq!(
+        outvec[1].tokens.len(),
+        line_1.len(),
+        "Mismatch in expected token length - expected {}, got {}",
+        line_1.len(),
+        outvec[1].tokens.len()
+    );
+
+    for i in 0..outvec[0].tokens.len() {
+        assert_eq!(
+            outvec[0].tokens[i], line_0[i],
+            "Token mismatch - expected {}, got {}",
+            line_0[i], outvec[0].tokens[i]
+        );
+    }
+
+    for i in 0..outvec[1].tokens.len() {
+        assert_eq!(
+            outvec[1].tokens[i], line_1[i],
+            "Token mismatch - expected {}, got {}",
+            line_1[i], outvec[1].tokens[i]
+        );
     }
 }
 
-//Assumes Twitter-sentiment-self-drive-DFE-Test.csv is in the crate root directory
-//Creates a HashMap of TokenOccurence
-//Displays by iterating through the Hashmap.  Asks to terminate at each key value.
-//Iterator is unordered.
+/// Validates output from bayes_preprocess against test.csv
+/// Expects test.csv with proper contents to be in the root directory of the crate.
+/// Future update to create a temporary file with the correct contents and use this to test.
+#[test]
 fn test_bayes_preprocess() {
     let mut filepath = env::current_dir().unwrap();
-    let target = "not_relevant";
-    filepath.push("Twitter-sentiment-self-drive-DFE-Test.csv");
+    let target = "a";
+    filepath.push("test.csv");
 
     let ostringpath = filepath.into_os_string();
-    if let Ok(_seepath) = ostringpath.clone().into_string() {
-        //println!("{}", seepath);
-    } else {
-        println!("Filepath not displayable - continuing...")
-    }
 
     let outvec = parse_csv_to_linetarget(&ostringpath).unwrap();
-    let bayes = bayes_preprocess(&outvec, target);
+    let (tokens, words) = bayes_preprocess(&outvec, target);
 
-    println!("{:?}", bayes.1);
-    for line in bayes.0.iter() {
-        println!("Key: {}", line.0);
-        println!("TokenOccurence: {:?}", line.1);
-        if input!("Continue? Enter 'N' to exit: ").to_uppercase() == "N" {
-            std::process::exit(0);
-        }
+    let line_0 = ["test", "this", "is"];
+    let line_1 = ["second", "line"];
+
+    assert_eq!(
+        tokens.len(),
+        2,
+        "Mismatch on number of lines returned from bayes_preprocess - expected 2, got {}",
+        tokens.len()
+    );
+
+    assert_eq!(
+        words.class_a, 3,
+        "Mismatch on number of words in words.class_a - expected 3, got {}",
+        words.class_a
+    );
+    assert_eq!(
+        words.class_b, 2,
+        "Mismatch on number of words in words.class_b - expected 2, got {}",
+        words.class_b
+    );
+
+    for word in line_0 {
+        assert_eq!(
+            tokens.get(word).unwrap().class_a,
+            1,
+            "Expected {} in class_a, not present",
+            word
+        );
+        assert_eq!(
+            tokens.get(word).unwrap().class_b,
+            0,
+            "{} found in class_b, not expected",
+            word
+        );
+    }
+
+    for word in line_1 {
+        assert_eq!(
+            tokens.get(word).unwrap().class_b,
+            1,
+            "Expected {} in class_b, not present",
+            word
+        );
+        assert_eq!(
+            tokens.get(word).unwrap().class_a,
+            0,
+            "{} found in class_a, not expected",
+            word
+        );
     }
 }
 
+/// Validates output from bayes_preprocess against test.csv
+/// Expects test.csv with proper contents to be in the root directory of the crate.
+/// Future update to create a temporary file with the correct contents and use this to test.
+/// Uncertain how to correctly transform this into a proper unit test
+#[allow(dead_code)]
 fn test_naive_bayes_modeling() {
     let mut filepath = env::current_dir().unwrap();
     let mut savepath = env::current_dir().unwrap();
@@ -404,9 +470,11 @@ fn test_naive_bayes_modeling() {
     save_naive_bayes_model(&ostringsavepath, model).unwrap();
 }
 
-//  Tests naive bayes predictions against provided datasets.
-//  Performs well on the self-driving dataset, not super great on progressive checks - lots of false negatives
-//  Suspect the size of the dataset for the latter relative to possible classes is too small.
+/// Tests trained naive bayes model against a test set.
+/// Expects test.csv with proper contents to be in the root directory of the crate.
+/// Future update to create a temporary file with the correct contents and use this to test.
+/// Uncertain how to correctly transform this into a proper unit test
+#[allow(dead_code)]
 fn test_naive_bayes_against_test() {
     let mut trainpath = env::current_dir().unwrap();
     let mut testpath = env::current_dir().unwrap();
