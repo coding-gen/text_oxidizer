@@ -20,8 +20,6 @@ struct Args {
     ///Use Naive Bayes.  Cannot be used with other NLP tools.
     #[arg(long)]
     naive_bayes: bool,
-
-    ///
 }
 
 fn main() {
@@ -29,7 +27,7 @@ fn main() {
     // test_naive_bayes_against_test();
     let args = Args::parse();
 
-    println!("Argument: {}", args.tool);
+    println!("Argument: {}", args.source);
 
     if args.test {
         println!("Test is enabled");
