@@ -45,7 +45,7 @@ struct Args {
     nb_pred: Vec<String>,
 
     /// Train a BPE Tokenizer, and use it to tokenize a text file.
-    #[arg(long, num_args = 2, value_names = ["SAMPLE TXT", "HYPER PARAMETER: VOCAB SIZE"])]
+    #[arg(long, num_args = 2, value_names = ["SAMPLE TXT", "HYPERPARAMETER VOCAB SIZE"])]
     bpe: Vec<String>,
 }
 
@@ -244,6 +244,8 @@ fn naive_bayes_predict(sample: &str, model: &str) {
 /// Builds a token vocabulary using Byte Pair Encoding and saves it.  
 /// Resulting CSV is saved to the program root folder.
 /// Its name will be the same as the training file with 'BPE-TOKENIZED-' appended to the front.
+/// Select the hyperparameter large enough to form word roots, small enough to separate word parts like pre/suffix.
+/// Can be measured, by percent of tokens in resulting vocab, which end in </w> end of word indicator.
 fn bpe_generate(in_file: &str, vocab_size: &str) {
     let mut filepath = env::current_dir().unwrap();
     let mut savepath = env::current_dir().unwrap();
