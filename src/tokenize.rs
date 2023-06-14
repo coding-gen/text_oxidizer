@@ -1,3 +1,12 @@
+//! Basic Tokenizer
+//! Tools for Natural Language Processing in Rust
+//!
+//! Authors: Sawyer Norquist
+//! Programming in Rust 2023
+//! Professor Dr. Bart Massey 2023
+//! Resources:
+//! https://doc.rust-lang.org/reference/
+
 #[allow(unused)]
 use std::{
     env,

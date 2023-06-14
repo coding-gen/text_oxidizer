@@ -1,15 +1,15 @@
+mod bpe;
 mod debug_tools;
 mod naive_bayes;
 mod tokenize;
-mod bpe;
 use std::env;
 use std::error::Error;
 use std::ffi::OsStr;
 
+pub use crate::bpe::*;
 pub use crate::debug_tools::*;
 pub use crate::naive_bayes::*;
 pub use crate::tokenize::*;
-pub use crate::bpe::*;
 use clap::arg;
 use clap::Parser;
 use csv::Reader;
@@ -45,7 +45,7 @@ struct Args {
     nb_pred: Vec<String>,
 
     /// Train a BPE Tokenizer, and use it to tokenize a text file.
-    #[arg(long, num_args = 2, value_names = ["SAMPLE TXT", "HYPER PARAMETER: VOCAB SIZE"])]
+    #[arg(long, num_args = 2, value_names = ["SAMPLE TXT", "HYPERPARAMETER VOCAB SIZE"])]
     bpe: Vec<String>,
 }
 
@@ -91,7 +91,7 @@ fn main() {
     if !args.nb_pred.is_empty() {
         naive_bayes_predict(args.nb_pred.get(0).unwrap(), args.nb_pred.get(1).unwrap())
     }
-    
+
     if !args.bpe.is_empty() {
         bpe_generate(args.bpe.get(0).unwrap(), args.bpe.get(1).unwrap())
     }
@@ -244,6 +244,8 @@ fn naive_bayes_predict(sample: &str, model: &str) {
 /// Builds a token vocabulary using Byte Pair Encoding and saves it.  
 /// Resulting CSV is saved to the program root folder.
 /// Its name will be the same as the training file with 'BPE-TOKENIZED-' appended to the front.
+/// Select the hyperparameter large enough to form word roots, small enough to separate word parts like pre/suffix.
+/// Can be measured, by percent of tokens in resulting vocab, which end in </w> end of word indicator.
 fn bpe_generate(in_file: &str, vocab_size: &str) {
     let mut filepath = env::current_dir().unwrap();
     let mut savepath = env::current_dir().unwrap();
@@ -261,8 +263,5 @@ fn bpe_generate(in_file: &str, vocab_size: &str) {
     println!("Lemmatized vocab: {:?}", vocab);
     //let tokenized = bpe_encoding();
 
-    save_bpe_vocab(&ostringsavepath, &vocab)
-        .unwrap_or_else(|_| error("Failed to save vocab."));
+    save_bpe_vocab(&ostringsavepath, &vocab).unwrap_or_else(|_| error("Failed to save vocab."));
 }
-
-
