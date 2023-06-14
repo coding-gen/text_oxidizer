@@ -67,11 +67,11 @@ fn main() {
     // test_naive_bayes_against_test();
     let args = Args::parse();
 
-    if args.nb_gen.len() != 0 {
+    if !args.nb_gen.is_empty() {
         naive_bayes_generate(args.nb_gen.get(0).unwrap(), args.nb_gen.get(1).unwrap());
     }
 
-    if args.nb_gen_test.len() != 0 {
+    if !args.nb_gen_test.is_empty() {
         naive_bayes_generate_and_test(
             args.nb_gen_test.get(0).unwrap(),
             args.nb_gen_test.get(1).unwrap(),
@@ -79,14 +79,14 @@ fn main() {
         )
     }
 
-    if args.nb_pred_s.len() != 0 {
+    if !args.nb_pred_s.is_empty() {
         naive_bayes_predict_string(
             args.nb_pred_s.get(0).unwrap(),
             args.nb_pred_s.get(1).unwrap(),
         )
     }
 
-    if args.nb_pred.len() != 0 {
+    if !args.nb_pred.is_empty() {
         naive_bayes_predict(args.nb_pred.get(0).unwrap(), args.nb_pred.get(1).unwrap())
     }
 }
@@ -94,7 +94,7 @@ fn main() {
 fn naive_bayes_generate(target: &str, training: &str) {
     let mut filepath = env::current_dir().unwrap();
     let mut savepath = env::current_dir().unwrap();
-    filepath.push(training.to_string());
+    filepath.push(training);
     savepath.push("MODEL-".to_string() + training);
 
     let ostringpath = filepath.into_os_string();

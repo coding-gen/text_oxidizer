@@ -136,7 +136,7 @@ pub fn naive_bayes_matches_target(
     model: &HashMap<String, TokenProbabilities>,
     line: &LineTarget,
 ) -> bool {
-    (line.target == target) == naive_bayes_in_class(&model, &line)
+    (line.target == target) == naive_bayes_in_class(model, line)
 }
 
 pub fn save_naive_bayes_model(
@@ -148,7 +148,7 @@ pub fn save_naive_bayes_model(
     wtr.write_record(["word", "class_a", "class_b"])?;
 
     for item in to_save {
-        wtr.write_record(&[
+        wtr.write_record([
             item.0,
             &item.1.class_a.to_string(),
             &item.1.class_b.to_string(),
