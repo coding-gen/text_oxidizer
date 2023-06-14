@@ -1,15 +1,15 @@
+mod bpe;
 mod debug_tools;
 mod naive_bayes;
 mod tokenize;
-mod bpe;
 use std::env;
 use std::error::Error;
 use std::ffi::OsStr;
 
+pub use crate::bpe::*;
 pub use crate::debug_tools::*;
 pub use crate::naive_bayes::*;
 pub use crate::tokenize::*;
-pub use crate::bpe::*;
 use clap::arg;
 use clap::Parser;
 use csv::Reader;
@@ -91,7 +91,7 @@ fn main() {
     if !args.nb_pred.is_empty() {
         naive_bayes_predict(args.nb_pred.get(0).unwrap(), args.nb_pred.get(1).unwrap())
     }
-    
+
     if !args.bpe.is_empty() {
         bpe_generate(args.bpe.get(0).unwrap(), args.bpe.get(1).unwrap())
     }
@@ -261,8 +261,5 @@ fn bpe_generate(in_file: &str, vocab_size: &str) {
     println!("Lemmatized vocab: {:?}", vocab);
     //let tokenized = bpe_encoding();
 
-    save_bpe_vocab(&ostringsavepath, &vocab)
-        .unwrap_or_else(|_| error("Failed to save vocab."));
+    save_bpe_vocab(&ostringsavepath, &vocab).unwrap_or_else(|_| error("Failed to save vocab."));
 }
-
-
