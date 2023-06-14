@@ -4,11 +4,19 @@ use csv::{Reader, Writer};
 
 pub use crate::tokenize::*;
 
+/// Enum used to help calculate Precision and Recall for Naive Bayes
+pub enum PredictionResult {
+    TruePositive,
+    TrueNegative,
+    FalsePositive,
+    FalseNegative,
+}
+
 /// Pairs a vec of tokens with a target for usage in an ML algorithm.
 #[derive(Debug)]
 pub struct LineTarget {
     tokens: Vec<String>,
-    target: String,
+    pub target: String,
 }
 
 /// Tracks number of tokens in two classes.
@@ -117,30 +125,103 @@ fn generate_naive_bayes_class_probability(
 /// Returns true if the probability indicates a match to the target built in to the model.
 pub fn naive_bayes_in_class(
     model: &HashMap<String, TokenProbabilities>,
-    line: &Vec<String>,
+    line: &LineTarget,
 ) -> bool {
-    let result = generate_naive_bayes_class_probability(model, line);
+    let result = generate_naive_bayes_class_probability(model, &line.tokens);
 
     result.class_a / result.class_b > 1.0
 }
 
+/// Takes in a naive bayes model in the form of a HashMap<String, TokenProbabilities> and an &str to check against
+/// Returns true if the probability indicates a match to the target built in to the model.
+pub fn naive_bayes_in_class_str(model: &HashMap<String, TokenProbabilities>, line: &str) -> bool {
+    let result =
+        generate_naive_bayes_class_probability(model, &tokenize_line_alphas_lowercase(line));
+
+    result.class_a / result.class_b > 1.0
+}
+
+/// Takes in the expected target as &str, a model in the form of a HashMap<String, TokenProbabilities>, and a line as an &LineTarget
+/// Returns a bool indicating if the prediction was correct.
+pub fn naive_bayes_matches_target(
+    target: &str,
+    model: &HashMap<String, TokenProbabilities>,
+    line: &LineTarget,
+) -> bool {
+    (line.target == target) == naive_bayes_in_class(model, line)
+}
+
+/// Takes in the expected target as &str, a model in the form of a HashMap<String, TokenProbabilities>, and a line as an &LineTarget
+/// Returns a PredictionResult indicating the nature of the match
+/// More advanced version of naive_bayes_matches_target(), used for calculating Precision and Recall.
+pub fn naive_bayes_matches_target_test(
+    target: &str,
+    model: &HashMap<String, TokenProbabilities>,
+    line: &LineTarget,
+) -> PredictionResult {
+    let prediction = naive_bayes_in_class(model, line);
+    if (line.target == target) && prediction {
+        PredictionResult::TruePositive
+    } else if (line.target != target) && !prediction {
+        PredictionResult::TrueNegative
+    } else if (line.target != target) && prediction {
+        PredictionResult::FalsePositive
+    } else {
+        PredictionResult::FalseNegative
+    }
+}
+
+/// Takes a filepath as an &OsStr and a &HashMap<String, TokenProbabilities> to save into a CSV
+/// Returns an error if one occurs
 pub fn save_naive_bayes_model(
     fpath: &OsStr,
-    to_save: HashMap<String, TokenProbabilities>,
+    to_save: &HashMap<String, TokenProbabilities>,
 ) -> Result<(), Box<dyn Error>> {
     let mut wtr = Writer::from_path(fpath)?;
 
     wtr.write_record(["word", "class_a", "class_b"])?;
 
     for item in to_save {
-        wtr.write_record(&[
+        wtr.write_record([
             item.0,
-            item.1.class_a.to_string(),
-            item.1.class_b.to_string(),
+            &item.1.class_a.to_string(),
+            &item.1.class_b.to_string(),
         ])?;
     }
 
     Ok(())
+}
+
+/// Takes a filepath as an &OsStr
+/// Returns a Result containing either a HashMap<String, TokenProbabilities> or an error
+/// Used to load a previously-generated trained Naive Bayes model
+/// CSV must be three columns and include headers in this order: word, class_a, class_b
+pub fn load_naive_bayes_model(
+    fpath: &OsStr,
+) -> Result<HashMap<String, TokenProbabilities>, Box<dyn Error>> {
+    let mut out = HashMap::new();
+    let mut reader = Reader::from_path(fpath)?;
+
+    for result in reader.byte_records() {
+        let record = result?;
+        let probs = TokenProbabilities {
+            class_a: String::from_utf8_lossy(record.get(1).unwrap())
+                .parse::<f64>()
+                .unwrap(),
+            class_b: String::from_utf8_lossy(record.get(2).unwrap())
+                .parse::<f64>()
+                .unwrap(),
+        };
+
+        out.insert(
+            String::from_utf8_lossy(record.get(0).unwrap())
+                .to_string()
+                .clone(),
+            probs,
+        );
+    }
+
+    Ok(out)
 }
 
 /// Accepts a path to a CSV file.
@@ -316,7 +397,7 @@ fn test_naive_bayes_modeling() {
     let outvec = parse_csv_to_linetarget(&ostringpath).unwrap();
     let bayes = bayes_preprocess(&outvec, target);
     let model = generate_naive_bayes_model(&bayes.0, bayes.1);
-    save_naive_bayes_model(&ostringsavepath, model).unwrap();
+    save_naive_bayes_model(&ostringsavepath, &model).unwrap();
 }
 
 /// Tests trained naive bayes model against a test set.
@@ -360,7 +441,7 @@ fn test_naive_bayes_against_test() {
     //  Should work by checking first if the current item matches the target,
     //  then compares that result to the naive bayes prediction.
     for item in testvec {
-        if (item.target == target) == naive_bayes_in_class(&model, &item.tokens) {
+        if (item.target == target) == naive_bayes_in_class(&model, &item) {
             correct += 1;
         }
         total += 1;
