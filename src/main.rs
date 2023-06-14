@@ -63,8 +63,6 @@ pub fn load_csv(fpath: &OsStr) -> Result<Vec<String>, Box<dyn Error>> {
 }
 
 fn main() {
-    // test_naive_bayes_modeling();
-    // test_naive_bayes_against_test();
     let args = Args::parse();
 
     if !args.nb_gen.is_empty() {
@@ -131,22 +129,34 @@ fn naive_bayes_generate_and_test(target: &str, training: &str, test: &str) {
         .unwrap_or_else(|_| error("Failed to save model"));
 
     let mut total: u32 = 0;
-    let mut correct: u32 = 0;
+    let mut tpos: u32 = 0;
+    let mut tneg: u32 = 0;
+    let mut fpos: u32 = 0;
+    let mut fneg: u32 = 0;
 
     //  Should work by checking first if the current item matches the target,
     //  then compares that result to the naive bayes prediction.
     for item in testvec {
-        if naive_bayes_matches_target(target, &model, &item) {
-            correct += 1;
+        let result = naive_bayes_matches_target_test(target, &model, &item);
+        match result {
+            PredictionResult::TruePositive => tpos += 1,
+            PredictionResult::TrueNegative => tneg += 1,
+            PredictionResult::FalsePositive => fpos += 1,
+            PredictionResult::FalseNegative => fneg += 1,
         }
+
         total += 1;
     }
 
-    let percent_correct = f64::from(correct) / f64::from(total);
+    let percent_correct = f64::from(tpos + tneg) / f64::from(total);
+    let precision = f64::from(tpos) / f64::from(tpos + fpos);
+    let recall = f64::from(tpos) / f64::from(tpos + fneg);
 
-    println!("Correct: {}", correct);
+    println!("Correct: {}", tpos + tneg);
     println!("Total: {}", total);
     println!("Percent correct: {}", percent_correct);
+    println!("Precision: {}", precision);
+    println!("Recall: {}", recall);
 }
 
 fn naive_bayes_predict_string(sample: &str, model: &str) {
@@ -183,9 +193,10 @@ fn naive_bayes_predict(sample: &str, model: &str) {
 
     for item in samples {
         if naive_bayes_in_class_str(&model, &item) {
-            outvec.push((item, "true"));
+            outvec.push((item, "true".to_string()));
+            println!("true");
         } else {
-            outvec.push((item, "false"));
+            outvec.push((item, "false".to_string()));
         }
     }
 
@@ -196,7 +207,7 @@ fn naive_bayes_predict(sample: &str, model: &str) {
         .unwrap_or_else(|_| error("Unable to save predictions"));
 
     for item in outvec {
-        wtr.write_record(&[item.0, item.1.to_string()])
+        wtr.write_record(&[item.0, item.1])
             .unwrap_or_else(|_| error("Unable to write to prediction file"));
     }
 

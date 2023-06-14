@@ -4,6 +4,14 @@ use csv::{Reader, Writer};
 
 pub use crate::tokenize::*;
 
+/// Enum used to help calculate Precision and Recall for Naive Bayes
+pub enum PredictionResult {
+    TruePositive,
+    TrueNegative,
+    FalsePositive,
+    FalseNegative,
+}
+
 /// Pairs a vec of tokens with a target for usage in an ML algorithm.
 #[derive(Debug)]
 pub struct LineTarget {
@@ -105,10 +113,16 @@ fn generate_naive_bayes_class_probability(
 
     for token in line {
         if let Some(result) = model.get(token) {
+            // println!(
+            //     "{} - class_a: {}, class_b: {}",
+            //     token, result.class_a, result.class_b
+            // );
             class_a *= result.class_a;
             class_b *= result.class_b;
         }
     }
+
+    // println!("class_a: {}, class_b: {}", class_a, class_b);
 
     TokenProbabilities { class_a, class_b }
 }
@@ -120,13 +134,21 @@ pub fn naive_bayes_in_class(
     line: &LineTarget,
 ) -> bool {
     let result = generate_naive_bayes_class_probability(model, &line.tokens);
-
+    // println!("class_a/class_b: {}", result.class_a / result.class_b);
+    // if input!("N to stop: ") == "n" {
+    //     std::process::exit(0);
+    // }
     result.class_a / result.class_b > 1.0
 }
 
 pub fn naive_bayes_in_class_str(model: &HashMap<String, TokenProbabilities>, line: &str) -> bool {
     let result =
         generate_naive_bayes_class_probability(model, &tokenize_line_alphas_lowercase(line));
+
+    // println!("class_a/class_b: {}", result.class_a / result.class_b);
+    // if input!("N to stop: ") == "n" {
+    //     std::process::exit(0);
+    // }
 
     result.class_a / result.class_b > 1.0
 }
@@ -137,6 +159,23 @@ pub fn naive_bayes_matches_target(
     line: &LineTarget,
 ) -> bool {
     (line.target == target) == naive_bayes_in_class(model, line)
+}
+
+pub fn naive_bayes_matches_target_test(
+    target: &str,
+    model: &HashMap<String, TokenProbabilities>,
+    line: &LineTarget,
+) -> PredictionResult {
+    let prediction = naive_bayes_in_class(model, line);
+    if (line.target == target) && prediction {
+        PredictionResult::TruePositive
+    } else if (line.target != target) && !prediction {
+        PredictionResult::TrueNegative
+    } else if (line.target != target) && prediction {
+        PredictionResult::FalsePositive
+    } else {
+        PredictionResult::FalseNegative
+    }
 }
 
 pub fn save_naive_bayes_model(
@@ -176,7 +215,7 @@ pub fn load_naive_bayes_model(
         };
 
         out.insert(
-            String::from_utf8_lossy(record.get(1).unwrap())
+            String::from_utf8_lossy(record.get(0).unwrap())
                 .to_string()
                 .clone(),
             probs,
