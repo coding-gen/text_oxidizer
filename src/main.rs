@@ -1,6 +1,7 @@
 mod debug_tools;
 mod naive_bayes;
 mod tokenize;
+mod bpe;
 use std::env;
 use std::error::Error;
 use std::ffi::OsStr;
@@ -8,6 +9,7 @@ use std::ffi::OsStr;
 pub use crate::debug_tools::*;
 pub use crate::naive_bayes::*;
 pub use crate::tokenize::*;
+pub use crate::bpe::*;
 use clap::arg;
 use clap::Parser;
 use csv::Reader;
@@ -26,21 +28,25 @@ fn error(err: &str) -> ! {
 // Command line arguments
 #[derive(Parser)]
 struct Args {
-    /// Generate Naive Bayes model
+    /// Generate Naive Bayes model.
     #[arg(long, num_args = 2, value_names = ["TARGET", "TRAINING CSV"])]
     nb_gen: Vec<String>,
 
-    /// Generate Naive Bayes model and test it
+    /// Generate Naive Bayes model and test it.
     #[arg(long, num_args = 3, value_names = ["TARGET", "TRAINING CSV", "TEST CSV"])]
     nb_gen_test: Vec<String>,
 
-    /// Load Naive Bayes model and compare target string
+    /// Load Naive Bayes model and compare target string.
     #[arg(long, num_args = 2, value_names = ["SAMPLE", "MODEL CSV"])]
     nb_pred_s: Vec<String>,
 
-    /// Load Naive Bayes model and compare CSV of strings
+    /// Load Naive Bayes model and compare CSV of strings.
     #[arg(long, num_args = 2, value_names = ["SAMPLE CSV", "MODEL CSV"])]
     nb_pred: Vec<String>,
+
+    /// Train a BPE Tokenizer, and use it to tokenize a text file.
+    #[arg(long, num_args = 1, value_names = ["SAMPLE TXT"])]
+    bpe: Vec<String>,
 }
 
 /// Takes in a filepath as an &OsStr
@@ -85,6 +91,11 @@ fn main() {
     if !args.nb_pred.is_empty() {
         naive_bayes_predict(args.nb_pred.get(0).unwrap(), args.nb_pred.get(1).unwrap())
     }
+    
+    if !args.bpe.is_empty() {
+        bpe_generate(args.bpe.get(0).unwrap())
+    }
+    //bpe_generate("test.csv");
 }
 
 /// Takes in a target as an &str and a filename to a training CSV as an &str
@@ -228,3 +239,32 @@ fn naive_bayes_predict(sample: &str, model: &str) {
         ostroutpath.to_string_lossy()
     );
 }
+
+/// Takes in a target as an &str and a filename to a training CSV as an &str
+/// Assumes the CSV is in the program root folder.
+/// Builds a token vocabulary using Byte Pair Encoding and saves it.  
+// Resulting CSV is saved to the program root folder.
+/// Its name will be the same as the training file with 'BPE-TOKENIZED-' appended to the front.
+fn bpe_generate(in_file: &str) {
+    let mut filepath = env::current_dir().unwrap();
+    let mut savepath = env::current_dir().unwrap();
+    filepath.push(in_file);
+    savepath.push("BPE-TOKENIZED-".to_string() + in_file);
+
+    let ostringpath = filepath.into_os_string();
+    let ostringsavepath = savepath.into_os_string();
+
+    let outvec = parse_csv_to_lines(&ostringpath)
+        .unwrap_or_else(|_| error("Cannot open or parse training CSV."));
+
+    let vocab = bpe_training(outvec, 70);
+    println!("Lemmatized vocab: {:?}", vocab);
+
+    //let bayes = bayes_preprocess(&outvec, target);
+    //let model = generate_naive_bayes_model(&bayes.0, bayes.1);
+
+    save_bpe_vocab(&ostringsavepath, &vocab)
+        .unwrap_or_else(|_| error("Failed to save vocab."));
+}
+
+

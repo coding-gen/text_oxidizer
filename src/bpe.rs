@@ -1,7 +1,9 @@
-use std::collections::HashMap;
+use std::{collections::HashMap, error::Error, ffi::OsStr};
+use csv::{Reader, Writer};
 
-mod debug_tools;
+pub use crate::tokenize::*;
 pub use crate::debug_tools::*;
+
 
 #[derive(Debug, Clone)]
 struct WordCount {
@@ -143,23 +145,39 @@ fn bpe_encoding(token_lines: Vec<Vec<String>>) {
 }
 */
 
+/// Accepts a path to a CSV file.
+/// Returns a Vec of Vec of Strings for further processing by BPE, or any resultant errors.
+pub fn parse_csv_to_lines(fpath: &OsStr) -> Result<Vec<Vec<String>>, Box<dyn Error>> {
+    let mut out: Vec<Vec<String>> = Vec::new();
+    let mut reader = Reader::from_path(fpath)?;
 
-//#########################################################################################################
+    for result in reader.byte_records() {
+        let record = result?;
+        let tokens =
+            tokenize_line_alphas_lowercase(&String::from_utf8_lossy(record.get(1).unwrap()));
+        //let target = String::from_utf8_lossy(record.get(0).unwrap()).into_owned();
 
+        //let newout = LineTarget { tokens, target };
 
-fn main() {
-    let test_text = "Here is some test text. Question though, \n Does it do what we want? \nwhat precisely do we want? To test the text.";
-    //let test_text = "Read and it, here and read it and \na and bandolier";
-    let mut tokenized_lines: Vec<Vec<String>> = Vec::new();
-
-    for line in test_text.lines() {
-        let tokenized_line = tokenize_line(&line);
-        println!("Result from tokenizer: {:?}", tokenized_line);
-        tokenized_lines.push(tokenized_line);
+        out.push(tokens)
     }
-    
-    let lemmatized = bpe_training(tokenized_lines, 70);
-    println!("Lemmatized vocab: {:?}", lemmatized);
 
+    Ok(out)
+}
 
+/// Takes a filepath as an &OsStr and a &Vec<String> to save into a CSV
+/// Returns an error if one occurs
+pub fn save_bpe_vocab(
+    fpath: &OsStr,
+    to_save: &Vec<String>,
+) -> Result<(), Box<dyn Error>> {
+    let mut wtr = Writer::from_path(fpath)?;
+    wtr.write_record(["Tokens in vocab:"])?;
+
+    for token in to_save {
+        wtr.write_record([
+            token
+        ])?;
+    }
+    Ok(())
 }
