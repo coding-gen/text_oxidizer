@@ -23,6 +23,7 @@ fn error(err: &str) -> ! {
     panic!("error");
 }
 
+// Command line arguments
 #[derive(Parser)]
 struct Args {
     /// Generate Naive Bayes model.  Requires <TARGET> <TRAINING CSV PATH>
@@ -48,7 +49,10 @@ struct Args {
     nb_pred: Vec<String>,
 }
 
-pub fn load_csv(fpath: &OsStr) -> Result<Vec<String>, Box<dyn Error>> {
+/// Takes in a filepath as an &OsStr
+/// Returns a result containing other a Vec<String> or a resulting error
+/// Used to load a sample CSV for running against an NLP ML model
+fn load_csv(fpath: &OsStr) -> Result<Vec<String>, Box<dyn Error>> {
     let mut out = Vec::new();
     let mut reader = Reader::from_path(fpath)?;
 
@@ -89,6 +93,10 @@ fn main() {
     }
 }
 
+/// Takes in a target as an &str and a filename to a training CSV as an &str
+/// Assumes the CSV is in the program root folder.
+/// Builds a Naive Bayes model and saves it.  Resulting CSV is saved to the program root folder.
+/// Its name will be the same as the training file with 'MODEL-' appended to the front.
 fn naive_bayes_generate(target: &str, training: &str) {
     let mut filepath = env::current_dir().unwrap();
     let mut savepath = env::current_dir().unwrap();
@@ -106,6 +114,11 @@ fn naive_bayes_generate(target: &str, training: &str) {
         .unwrap_or_else(|_| error("Failed to save model"));
 }
 
+/// Takes in a target as an &str, a filename to a training CSV as an &str, and a filename to a test CSV as an &str
+/// Assumes the CSV's are in the program root folder.
+/// Builds a Naive Bayes model and saves it.  Resulting CSV is saved to the program root folder.
+/// Its name will be the same as the training file with 'MODEL-' appended to the front.
+/// Additionally, uses the test CSV to check the model's precision and recall.
 fn naive_bayes_generate_and_test(target: &str, training: &str, test: &str) {
     let mut trainpath = env::current_dir().unwrap();
     let mut testpath = env::current_dir().unwrap();
@@ -134,8 +147,6 @@ fn naive_bayes_generate_and_test(target: &str, training: &str, test: &str) {
     let mut fpos: u32 = 0;
     let mut fneg: u32 = 0;
 
-    //  Should work by checking first if the current item matches the target,
-    //  then compares that result to the naive bayes prediction.
     for item in testvec {
         let result = naive_bayes_matches_target_test(target, &model, &item);
         match result {
@@ -159,6 +170,9 @@ fn naive_bayes_generate_and_test(target: &str, training: &str, test: &str) {
     println!("Recall: {}", recall);
 }
 
+/// Takes in a target as an &str and a filename to a model CSV as an &str
+/// Assumes the CSV is in the program root folder.
+/// Compares the passed string to the model, and prints whether the prediction matches class_a in the model
 fn naive_bayes_predict_string(sample: &str, model: &str) {
     let mut modelpath = env::current_dir().unwrap();
     modelpath.push(model);
@@ -174,6 +188,10 @@ fn naive_bayes_predict_string(sample: &str, model: &str) {
     }
 }
 
+/// Takes in a filename to a sample list as an &str and a filename to a model CSV as an &str
+/// Assumes the CSV is in the program root folder.  The sample list must be a single column of sentences and include a header.
+/// Compares each sentence to the model, and saves each class prediction to a CSV paired with the sample sentence.
+/// Resulting file will be the same as the sample file with 'RESULT-' appended.
 fn naive_bayes_predict(sample: &str, model: &str) {
     let mut modelpath = env::current_dir().unwrap();
     let mut samplepath = env::current_dir().unwrap();

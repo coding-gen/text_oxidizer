@@ -113,16 +113,10 @@ fn generate_naive_bayes_class_probability(
 
     for token in line {
         if let Some(result) = model.get(token) {
-            // println!(
-            //     "{} - class_a: {}, class_b: {}",
-            //     token, result.class_a, result.class_b
-            // );
             class_a *= result.class_a;
             class_b *= result.class_b;
         }
     }
-
-    // println!("class_a: {}, class_b: {}", class_a, class_b);
 
     TokenProbabilities { class_a, class_b }
 }
@@ -134,25 +128,21 @@ pub fn naive_bayes_in_class(
     line: &LineTarget,
 ) -> bool {
     let result = generate_naive_bayes_class_probability(model, &line.tokens);
-    // println!("class_a/class_b: {}", result.class_a / result.class_b);
-    // if input!("N to stop: ") == "n" {
-    //     std::process::exit(0);
-    // }
+
     result.class_a / result.class_b > 1.0
 }
 
+/// Takes in a naive bayes model in the form of a HashMap<String, TokenProbabilities> and an &str to check against
+/// Returns true if the probability indicates a match to the target built in to the model.
 pub fn naive_bayes_in_class_str(model: &HashMap<String, TokenProbabilities>, line: &str) -> bool {
     let result =
         generate_naive_bayes_class_probability(model, &tokenize_line_alphas_lowercase(line));
 
-    // println!("class_a/class_b: {}", result.class_a / result.class_b);
-    // if input!("N to stop: ") == "n" {
-    //     std::process::exit(0);
-    // }
-
     result.class_a / result.class_b > 1.0
 }
 
+/// Takes in the expected target as &str, a model in the form of a HashMap<String, TokenProbabilities>, and a line as an &LineTarget
+/// Returns a bool indicating if the prediction was correct.
 pub fn naive_bayes_matches_target(
     target: &str,
     model: &HashMap<String, TokenProbabilities>,
@@ -161,6 +151,9 @@ pub fn naive_bayes_matches_target(
     (line.target == target) == naive_bayes_in_class(model, line)
 }
 
+/// Takes in the expected target as &str, a model in the form of a HashMap<String, TokenProbabilities>, and a line as an &LineTarget
+/// Returns a PredictionResult indicating the nature of the match
+/// More advanced version of naive_bayes_matches_target(), used for calculating Precision and Recall.
 pub fn naive_bayes_matches_target_test(
     target: &str,
     model: &HashMap<String, TokenProbabilities>,
@@ -178,6 +171,8 @@ pub fn naive_bayes_matches_target_test(
     }
 }
 
+/// Takes a filepath as an &OsStr and a &HashMap<String, TokenProbabilities> to save into a CSV
+/// Returns an error if one occurs
 pub fn save_naive_bayes_model(
     fpath: &OsStr,
     to_save: &HashMap<String, TokenProbabilities>,
@@ -197,6 +192,10 @@ pub fn save_naive_bayes_model(
     Ok(())
 }
 
+/// Takes a filepath as an &OsStr
+/// Returns a Result containing either a HashMap<String, TokenProbabilities> or an error
+/// Used to load a previously-generated trained Naive Bayes model
+/// CSV must be three columns and include headers in this order: word, class_a, class_b
 pub fn load_naive_bayes_model(
     fpath: &OsStr,
 ) -> Result<HashMap<String, TokenProbabilities>, Box<dyn Error>> {
