@@ -26,26 +26,20 @@ fn error(err: &str) -> ! {
 // Command line arguments
 #[derive(Parser)]
 struct Args {
-    /// Generate Naive Bayes model.  Requires <TARGET> <TRAINING CSV PATH>
-    /// Will save file based on the training CSV filename
-    #[arg(long, num_args = 2)]
+    /// Generate Naive Bayes model
+    #[arg(long, num_args = 2, value_names = ["TARGET", "TRAINING CSV"])]
     nb_gen: Vec<String>,
 
-    /// Generate Naive Bayes model and test it.  Requires <TARGET> <TRAINING CSV PATH> <TEST CSV PATH>
-    /// Will show test results and save file based on the training CSV filename
-    #[arg(long, num_args = 3)]
+    /// Generate Naive Bayes model and test it
+    #[arg(long, num_args = 3, value_names = ["TARGET", "TRAINING CSV", "TEST CSV"])]
     nb_gen_test: Vec<String>,
 
-    /// Load Naive Baye model and compare target string.  Requires <SAMPLE STRING> <MODEL CSV>
-    /// Will return True if the sample string is a statistical fit for the class the model was trained against.
-    /// Does not return the description of the class.
-    #[arg(long, num_args = 2)]
+    /// Load Naive Bayes model and compare target string
+    #[arg(long, num_args = 2, value_names = ["SAMPLE", "MODEL CSV"])]
     nb_pred_s: Vec<String>,
 
-    /// Load Naive Baye model and compare CSV of strings.  Requires <SAMPLE CSV> <MODEL CSV>
-    /// Will return CSV of strings with indicators if the string is a statistical fit for the class the model was trained against.
-    /// Does not return the description of the class.
-    #[arg(long, num_args = 2)]
+    /// Load Naive Bayes model and compare CSV of strings
+    #[arg(long, num_args = 2, value_names = ["SAMPLE CSV", "MODEL CSV"])]
     nb_pred: Vec<String>,
 }
 
