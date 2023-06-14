@@ -45,7 +45,7 @@ struct Args {
     nb_pred: Vec<String>,
 
     /// Train a BPE Tokenizer, and use it to tokenize a text file.
-    #[arg(long, num_args = 1, value_names = ["SAMPLE TXT"])]
+    #[arg(long, num_args = 2, value_names = ["SAMPLE TXT", "HYPER PARAMETER: VOCAB SIZE"])]
     bpe: Vec<String>,
 }
 
@@ -93,9 +93,8 @@ fn main() {
     }
     
     if !args.bpe.is_empty() {
-        bpe_generate(args.bpe.get(0).unwrap())
+        bpe_generate(args.bpe.get(0).unwrap(), args.bpe.get(1).unwrap())
     }
-    //bpe_generate("test.csv");
 }
 
 /// Takes in a target as an &str and a filename to a training CSV as an &str
@@ -243,9 +242,9 @@ fn naive_bayes_predict(sample: &str, model: &str) {
 /// Takes in a target as an &str and a filename to a training CSV as an &str
 /// Assumes the CSV is in the program root folder.
 /// Builds a token vocabulary using Byte Pair Encoding and saves it.  
-// Resulting CSV is saved to the program root folder.
+/// Resulting CSV is saved to the program root folder.
 /// Its name will be the same as the training file with 'BPE-TOKENIZED-' appended to the front.
-fn bpe_generate(in_file: &str) {
+fn bpe_generate(in_file: &str, vocab_size: &str) {
     let mut filepath = env::current_dir().unwrap();
     let mut savepath = env::current_dir().unwrap();
     filepath.push(in_file);
@@ -257,11 +256,10 @@ fn bpe_generate(in_file: &str) {
     let outvec = parse_csv_to_lines(&ostringpath)
         .unwrap_or_else(|_| error("Cannot open or parse training CSV."));
 
-    let vocab = bpe_training(outvec, 70);
+    let n = vocab_size.parse::<u8>().unwrap();
+    let vocab = bpe_training(outvec, n);
     println!("Lemmatized vocab: {:?}", vocab);
-
-    //let bayes = bayes_preprocess(&outvec, target);
-    //let model = generate_naive_bayes_model(&bayes.0, bayes.1);
+    //let tokenized = bpe_encoding();
 
     save_bpe_vocab(&ostringsavepath, &vocab)
         .unwrap_or_else(|_| error("Failed to save vocab."));
