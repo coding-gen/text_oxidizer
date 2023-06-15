@@ -1,3 +1,14 @@
+//! Byte Pair Encoder Tokenizer
+//! Tools for Natural Language Processing in Rust
+//!
+//! Authors: Sawyer Norquist, Genevieve LaLonde
+//! Programming in Rust 2023
+//! Professor Dr. Bart Massey 2023
+//! Resources:
+//! https://doc.rust-lang.org/reference/
+//! https://huggingface.co/learn/nlp-course/chapter6/5?fw=pt
+//! https://towardsdatascience.com/byte-pair-encoding-subword-based-tokenization-algorithm-77828a70bee0
+
 use std::{collections::HashMap, error::Error, ffi::OsStr};
 use csv::{Reader, Writer};
 
