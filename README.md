@@ -17,7 +17,7 @@ Sawyer Norquist, Genevieve LaLonde
 
 ## License
 
-Limited license available at: [LICENSE]https://github.com/coding-gen/text_oxidizer/blob/main/LICENSE.
+Limited license available at: [LICENSE](https://github.com/coding-gen/text_oxidizer/blob/main/LICENSE).
 
 ## Demo
 
