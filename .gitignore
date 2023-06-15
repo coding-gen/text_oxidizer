@@ -15,3 +15,9 @@ Cargo.lock
 
 # Custom
 .DS_Store
+
+# Build artifacts
+*.o
+
+# Editor and IDE files
+~*
