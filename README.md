@@ -75,7 +75,7 @@ cargo test
 
 ## Limitations and Future Directions
 
-Performance could be improved by switching to more of an object oriented paradigm to prevent passing large parameters back and forth. In Naive Bayes, smoothing could be implemented to prevent predictions from approaching 0 on unseen values. For example see this [Medium article on Laplacian Smoothing in Naive Bayes](https://towardsdatascience.com/laplace-smoothing-in-naïve-bayes-algorithm-9c237a8bdece). Additionally in the BPE function for selecting tokens to merge, the candidate table could be persisted and updated between runs instead of recreated and recomputed at each merge. Additionally the current vocab limit for the BPE is 255 due to the datatype selected(`u8`). While the BPE vocab generator is complete, the BPE encoder is not complete.
+Performance could be improved by switching to more of an object oriented paradigm to prevent passing large parameters back and forth. In Naive Bayes, smoothing could be implemented to prevent predictions from approaching 0 on unseen values. For example see this [Medium article on Laplacian Smoothing in Naive Bayes](https://towardsdatascience.com/laplace-smoothing-in-naïve-bayes-algorithm-9c237a8bdece). Additionally in the BPE function for selecting tokens to merge, the candidate table could be persisted and updated between runs instead of recreated and recomputed at each merge. Additionally the current vocab limit for the BPE is 255 due to the datatype selected(`u8`). The BPE encoder is not complete, it currently stores the formatted input corpus in the outfile.
 
 ## License
 

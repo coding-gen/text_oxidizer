@@ -9,9 +9,9 @@
 //! https://huggingface.co/learn/nlp-course/chapter6/5?fw=pt
 //! https://towardsdatascience.com/byte-pair-encoding-subword-based-tokenization-algorithm-77828a70bee0
 
-use std::{collections::HashMap, error::Error, ffi::OsStr};
 use csv::{Reader, Writer};
 use radsort::sort_by_key;
+use std::{collections::HashMap, error::Error, ffi::OsStr};
 
 pub use crate::debug_tools::*;
 pub use crate::tokenize::*;
@@ -203,16 +203,18 @@ pub fn bpe_training(token_lines: Vec<Vec<String>>, mut n: u8) -> Vec<String> {
     vocab
 }
 
-
-pub fn bpe_encoding(text_lines: Vec<Vec<String>>, mut vocab_lines: Vec<Vec<String>>) -> Vec<Vec<String>> {
+pub fn bpe_encoding(
+    text_lines: Vec<Vec<String>>,
+    mut vocab_lines: Vec<Vec<String>>,
+) -> Vec<Vec<String>> {
     //iterate over vocab
     // order longest token of vocab to shortest
     let mut formatted_vocab: Vec<String> = Vec::new();
     // Sort by token length, not including the end of word indicator.
     // source: https://docs.rs/radsort/latest/radsort/fn.sort_by_key.html
     sort_by_key(&mut vocab_lines, |s| s[0].len());
-    for entry in &mut vocab_lines{
-        if entry.len() == 2{
+    for entry in &mut vocab_lines {
+        if entry.len() == 2 {
             formatted_vocab.push(format!("{}{}", &entry[0], "</w>"));
         } else {
             formatted_vocab.push(entry[0].clone());
@@ -221,9 +223,9 @@ pub fn bpe_encoding(text_lines: Vec<Vec<String>>, mut vocab_lines: Vec<Vec<Strin
 
     let mut formatted_seqs: Vec<Vec<String>> = Vec::new();
     // process input text and add </w> to the end of each word
-    for sequence in &text_lines{
+    for sequence in &text_lines {
         let mut tmp_line: Vec<String> = Vec::new();
-        for token in sequence{
+        for token in sequence {
             tmp_line.push(format!("{}{}", token, "</w>"));
         }
         formatted_seqs.push(tmp_line);
@@ -234,7 +236,7 @@ pub fn bpe_encoding(text_lines: Vec<Vec<String>>, mut vocab_lines: Vec<Vec<Strin
     at every position of the token,
     compare to every token of the vocab.
     Walk the vocab in reverse order.
-    
+
     If a match is found, replace.
 
     Any substrings left in the input are replaced by </unknown> for now
@@ -247,7 +249,6 @@ pub fn bpe_encoding(text_lines: Vec<Vec<String>>, mut vocab_lines: Vec<Vec<Strin
 
     formatted_seqs
 }
-
 
 /// Accepts a path to a CSV file.
 /// Returns a Vec of Vec of basic tokenized Strings for further processing by BPE, or any resultant errors.
@@ -307,7 +308,6 @@ pub fn parse_txt_to_lines(fpath: &OsStr) -> Result<Vec<String>, Box<dyn Error>> 
     Ok(out)
 }
 
-
 /// Takes a filepath as an &OsStr and a &Vec<String> to save into a TXT
 /// Returns an error if one occurs
 pub fn save_bpe_vocab(fpath: &OsStr, to_save: &Vec<String>) -> Result<(), Box<dyn Error>> {
@@ -327,9 +327,9 @@ pub fn save_bpe_encoding(fpath: &OsStr, to_save: &Vec<Vec<String>>) -> Result<()
     wtr.write_record(["Tokenized sequences"])?;
 
     for line in to_save {
-        for token in line{
-            wtr.write_record(&[token])?;
-        }        
+        for token in line {
+            wtr.write_record([token])?;
+        }
     }
     Ok(())
 }
