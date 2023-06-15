@@ -285,7 +285,7 @@ fn bpe_generate(infile: &str, vocab_size: &str) {
     let ostringpath = filepath.into_os_string();
     let ostringsavepath = savepath.into_os_string();
 
-    let outvec = parse_csv_to_lines(&ostringpath)
+    let outvec = parse_csv_to_tokens(&ostringpath)
         .unwrap_or_else(|_| error("Cannot open or parse training CSV."));
 
     // TODO increase n max size, and convert so it can handle in bpe_training:
@@ -319,14 +319,14 @@ fn bpe_tokenize(infile: &str, vocab_file: &str) {
     let ostringsavepath = savepath.into_os_string();
     let ostring_vocab_path = vocabpath.into_os_string();
 
-    let outvec = parse_csv_to_lines(&ostringpath)
+    let outvec = parse_csv_to_tokens(&ostringpath)
         .unwrap_or_else(|_| error("Cannot open or parse source CSV."));
-    let vocabvec = parse_txt_to_lines(&ostring_vocab_path)
+    let vocabvec = parse_txt_to_tokens(&ostring_vocab_path)
         .unwrap_or_else(|_| error("Cannot open or parse source CSV."));
 
     let tokenized_file = bpe_encoding(outvec, vocabvec);
-    //println!("Tokenized file: {:?}", tokenized_file);
+    //bpe_encoding(text_lines: Vec<Vec<String>>, vocab_lines: Vec<Vec<String>>)
 
     save_bpe_encoding(&ostringsavepath, &tokenized_file)
-        .unwrap_or_else(|_| error("Failed to save vocab."));
+        .unwrap_or_else(|_| error("Failed to save tokenization."));
 }
