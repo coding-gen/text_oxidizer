@@ -106,11 +106,17 @@ fn main() {
     }
 
     if !args.bpe_train.is_empty() {
-        bpe_generate(args.bpe_train.get(0).unwrap(), args.bpe_train.get(1).unwrap())
+        bpe_generate(
+            args.bpe_train.get(0).unwrap(),
+            args.bpe_train.get(1).unwrap(),
+        )
     }
 
     if !args.bpe_tokenize.is_empty() {
-        bpe_tokenize(args.bpe_tokenize.get(0).unwrap(), args.bpe_tokenize.get(1).unwrap())
+        bpe_tokenize(
+            args.bpe_tokenize.get(0).unwrap(),
+            args.bpe_tokenize.get(1).unwrap(),
+        )
     }
 }
 
@@ -233,7 +239,6 @@ fn naive_bayes_predict(sample: &str, model: &str) {
     for item in samples {
         if naive_bayes_in_class_str(&model, &item) {
             outvec.push((item, "true".to_string()));
-            println!("true");
         } else {
             outvec.push((item, "false".to_string()));
         }
@@ -268,9 +273,12 @@ fn bpe_generate(infile: &str, vocab_size: &str) {
     let mut savepath = env::current_dir().unwrap();
     filepath.push(infile);
     let string_end = &infile[infile.len() - 4..];
-    if string_end == ".csv"{
-        savepath.push("BPE-VOCAB-".to_string() + format!("{}{}", &infile[0..infile.len() - 4], ".txt").as_str());
-    } else{
+    if string_end == ".csv" {
+        savepath.push(
+            "BPE-VOCAB-".to_string()
+                + format!("{}{}", &infile[0..infile.len() - 4], ".txt").as_str(),
+        );
+    } else {
         savepath.push("BPE-VOCAB-".to_string() + infile);
     }
 
@@ -298,9 +306,12 @@ fn bpe_tokenize(infile: &str, vocab_file: &str) {
     vocabpath.push(vocab_file);
 
     let string_end = &infile[infile.len() - 4..];
-    if string_end == ".csv"{
-        savepath.push("BPE-TOKENIZED-".to_string() + format!("{}{}", &infile[0..infile.len() - 4], ".txt").as_str());
-    } else{
+    if string_end == ".csv" {
+        savepath.push(
+            "BPE-TOKENIZED-".to_string()
+                + format!("{}{}", &infile[0..infile.len() - 4], ".txt").as_str(),
+        );
+    } else {
         savepath.push("BPE-TOKENIZED-".to_string() + infile);
     }
 
@@ -316,6 +327,6 @@ fn bpe_tokenize(infile: &str, vocab_file: &str) {
     let tokenized_file = bpe_encoding(outvec, vocabvec);
     println!("Tokenized file: {:?}", tokenized_file);
 
-    save_bpe_encoding(&ostringsavepath, &tokenized_file).unwrap_or_else(|_| error("Failed to save vocab."));
+    save_bpe_encoding(&ostringsavepath, &tokenized_file)
+        .unwrap_or_else(|_| error("Failed to save vocab."));
 }
-
