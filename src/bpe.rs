@@ -213,9 +213,10 @@ pub fn bpe_training(token_lines: Vec<Vec<String>>, mut n: u8) -> Vec<String> {
 }
 
 
-pub fn bpe_encoding(text_lines: Vec<Vec<String>>, vocab_lines: Vec<Vec<String>>) -> Vec<Vec<String>> {
+pub fn bpe_encoding(text_lines: Vec<Vec<String>>, _vocab_lines: Vec<Vec<String>>) -> Vec<Vec<String>> {
     //iterate over vocab
     // order longest token of vocab to shortest
+    // process input text and add </w> to the end of each word
     // Any substrings left in the input are replaced by </unknown> for now
     // retrain bpe with these new words,
     // add results to the vocab,
@@ -234,15 +235,26 @@ pub fn parse_csv_to_lines(fpath: &OsStr) -> Result<Vec<Vec<String>>, Box<dyn Err
         let record = result?;
         let tokens =
             tokenize_line_alphas_lowercase(&String::from_utf8_lossy(record.get(1).unwrap()));
-        //let target = String::from_utf8_lossy(record.get(0).unwrap()).into_owned();
-
-        //let newout = LineTarget { tokens, target };
-
         out.push(tokens)
     }
-
     Ok(out)
 }
+
+/// Accepts a path to a CSV file.
+/// Returns a Vec of Vec of Strings for further processing by BPE, or any resultant errors.
+pub fn parse_txt_to_lines(fpath: &OsStr) -> Result<Vec<Vec<String>>, Box<dyn Error>> {
+    let mut out: Vec<Vec<String>> = Vec::new();
+    let mut reader = Reader::from_path(fpath)?;
+
+    for result in reader.byte_records() {
+        let record = result?;
+        let tokens =
+            tokenize_line_alphas_lowercase(&String::from_utf8_lossy(record.get(0).unwrap()));
+        out.push(tokens)
+    }
+    Ok(out)
+}
+
 
 /// Takes a filepath as an &OsStr and a &Vec<String> to save into a TXT
 /// Returns an error if one occurs

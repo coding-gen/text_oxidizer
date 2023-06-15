@@ -310,13 +310,11 @@ fn bpe_tokenize(infile: &str, vocab_file: &str) {
 
     let outvec = parse_csv_to_lines(&ostringpath)
         .unwrap_or_else(|_| error("Cannot open or parse source CSV."));
-    let vocabvec = parse_csv_to_lines(&ostring_vocab_path)
+    let vocabvec = parse_txt_to_lines(&ostring_vocab_path)
         .unwrap_or_else(|_| error("Cannot open or parse source CSV."));
 
-
-
     let tokenized_file = bpe_encoding(outvec, vocabvec);
-    println!("Lemmatized vocab: {:?}", tokenized_file);
+    println!("Tokenized file: {:?}", tokenized_file);
 
     save_bpe_encoding(&ostringsavepath, &tokenized_file).unwrap_or_else(|_| error("Failed to save vocab."));
 }
