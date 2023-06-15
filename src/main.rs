@@ -1,3 +1,12 @@
+//! Text Oxidizer
+//! Tools for Natural Language Processing in Rust
+//!
+//! Authors: Sawyer Norquist, Genevieve LaLonde
+//! Programming in Rust 2023
+//! Professor Dr. Bart Massey 2023
+//! Resources:
+//! https://doc.rust-lang.org/reference/
+
 mod bpe;
 mod debug_tools;
 mod naive_bayes;
