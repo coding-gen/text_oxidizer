@@ -1,0 +1,27 @@
+Tokens in vocab:
+is</w>
+time</w>
+second</w>
+at</w>
+high</w>
+this</w>
+it</w>
+established</w>
+long</w>
+trade</w>
+the</w>
+practice</w>
+a</w>
+want</w>
+test</w>
+establish</w>
+tower</w>
+in</w>
+longest</w>
+will</w>
+line</w>
+take</w>
+his</w>
+to</w>
+highest</w>
+home</w>

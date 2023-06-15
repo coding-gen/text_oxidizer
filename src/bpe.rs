@@ -41,8 +41,6 @@ fn init_vocab_corpus(token_lines: Vec<Vec<String>>) -> (Vec<Frequency>, Vec<Word
                 // Build the frequency table with vocab of letters, and letter counts.
                 *word_freq.entry(c.to_string()).or_insert(0) += 1;
             }
-            // TODO this is supposed to break up prefix/suffix. Why isn't it?
-            // Because we are expected to know when to stop training before those tokens get merged.
             word.push("</w>".to_string());
 
             // Create dict with counts of words using 'entry'
@@ -70,6 +68,7 @@ fn init_vocab_corpus(token_lines: Vec<Vec<String>>) -> (Vec<Frequency>, Vec<Word
             count: x.1,
         })
         .collect();
+    /*
     println!("vocab:");
     for w in &frequency_table {
         println!("{:?}", w);
@@ -77,33 +76,28 @@ fn init_vocab_corpus(token_lines: Vec<Vec<String>>) -> (Vec<Frequency>, Vec<Word
     println!("corpus:");
     for w in &corp2 {
         println!("{:?}", w);
-    }
+    }*/
     (frequency_table, corp2)
 }
 
 // Locate the bigram with highest occurence in the corpus
 fn get_max_freq_bigram(corpus: &Vec<WordCount>) -> (Vec<String>, u32) {
     /*
+    TODO: improve performance.
     This can be optimized, by storing counts in a table
     Update the table for the constituent parts, when the bigram pair to merge is selected
+    returna candy, and pass it back on next call
+
+    extract out the construction of candidates, only do it once.
+    after building candidates, sort it in descending order of count
+    Then on each loop iteration, just pop the first element.
     */
     let mut candidate_bigram: (Vec<String>, u32) = (vec!["".to_string(), "".to_string()], 0);
     let mut candidates: HashMap<Vec<String>, u32> = HashMap::new();
 
-    // corpus entries: grams_list is a WordCount
-    //(grams_list.word, grams_list.count) in &corpus
-
-    // TODO extract out the construction of candidates, only do it once.
     for grams_list in corpus {
         for i in 0..grams_list.word.len() - 1 {
-            //let two_gram = vec![grams_list.word[i], grams_list.word[i+1]];
-            //let two_gram = [grams_list.word[i].clone(), grams_list.word[i+1].clone()].join("");
-
-            // TODO don't build candidates every time.
-            // Pass it around somehow, and just update it.
-
             // Count up the candidate bigrams
-
             *candidates
                 .entry(vec![
                     grams_list.word[i].clone(),
@@ -111,6 +105,7 @@ fn get_max_freq_bigram(corpus: &Vec<WordCount>) -> (Vec<String>, u32) {
                 ])
                 .or_insert(0) += grams_list.count;
 
+            // Find the max occurence bigram.
             if candidates[&vec![grams_list.word[i].clone(), grams_list.word[i + 1].clone()]]
                 > candidate_bigram.1
             {
@@ -118,21 +113,10 @@ fn get_max_freq_bigram(corpus: &Vec<WordCount>) -> (Vec<String>, u32) {
                 let count = candidates[&k];
                 candidate_bigram = (k, count);
             }
-
-            /*
-            // Find the max candidate on the fly while building candidates.
-            if candidates[&[grams_list.word[i].clone(), grams_list.word[i+1].clone()].join("")] > candidate_bigram.1 {
-                let k = [grams_list.word[i].clone(), grams_list.word[i+1].clone()].join("");
-                let count = candidates[&k];
-                candidate_bigram = (k, count);
-            }*/
         }
     }
+    // Convert to vector string for sorting, and reuse.
     let /*mut*/ _candy: Vec<WordCount> = candidates.into_iter().map(|x| WordCount { word: x.0, count: x.1 }).collect();
-    // TODO pass candy back, and use as param on the way back in.
-    // after building candidates, sort it in descending order of count
-    // Then on each loop iteration, just pop the first element.
-
     candidate_bigram
 }
 
@@ -155,6 +139,7 @@ fn update_frequency_table(
                 reduced = true;
             }
         }
+        // Vec size was adjusted, so adjust the index.
         if !reduced {
             i += 1;
         }
@@ -227,16 +212,17 @@ pub fn bpe_training(token_lines: Vec<Vec<String>>, mut n: u8) -> Vec<String> {
     vocab
 }
 
-/*
-fn bpe_encoding(token_lines: Vec<Vec<String>>) {
+
+pub fn bpe_encoding(text_lines: Vec<Vec<String>>, vocab_lines: Vec<Vec<String>>) -> Vec<Vec<String>> {
     //iterate over vocab
     // order longest token of vocab to shortest
     // Any substrings left in the input are replaced by </unknown> for now
     // retrain bpe with these new words,
     // add results to the vocab,
     // and tokenize the unknown words.
+    text_lines
 }
-*/
+
 
 /// Accepts a path to a CSV file.
 /// Returns a Vec of Vec of Strings for further processing by BPE, or any resultant errors.
@@ -258,7 +244,7 @@ pub fn parse_csv_to_lines(fpath: &OsStr) -> Result<Vec<Vec<String>>, Box<dyn Err
     Ok(out)
 }
 
-/// Takes a filepath as an &OsStr and a &Vec<String> to save into a CSV
+/// Takes a filepath as an &OsStr and a &Vec<String> to save into a TXT
 /// Returns an error if one occurs
 pub fn save_bpe_vocab(fpath: &OsStr, to_save: &Vec<String>) -> Result<(), Box<dyn Error>> {
     let mut wtr = Writer::from_path(fpath)?;
@@ -266,6 +252,20 @@ pub fn save_bpe_vocab(fpath: &OsStr, to_save: &Vec<String>) -> Result<(), Box<dy
 
     for token in to_save {
         wtr.write_record([token])?;
+    }
+    Ok(())
+}
+
+/// Takes a filepath as an &OsStr and a &Vec<Vec<String>> to save into a TXT
+/// Returns an error if one occurs
+pub fn save_bpe_encoding(fpath: &OsStr, to_save: &Vec<Vec<String>>) -> Result<(), Box<dyn Error>> {
+    let mut wtr = Writer::from_path(fpath)?;
+    wtr.write_record(["Tokens in vocab:"])?;
+
+    for line in to_save {
+        for token in line{
+            wtr.write_record([token])?;
+        }
     }
     Ok(())
 }

@@ -55,7 +55,11 @@ struct Args {
 
     /// Train a BPE Tokenizer, and use it to tokenize a text file.
     #[arg(long, num_args = 2, value_names = ["SAMPLE TXT", "HYPERPARAMETER VOCAB SIZE"])]
-    bpe: Vec<String>,
+    bpe_train: Vec<String>,
+
+    /// Train a BPE Tokenizer, and use it to tokenize a text file.
+    #[arg(long, num_args = 2, value_names = ["SAMPLE TXT", "VOCAB"])]
+    bpe_tokenize: Vec<String>,
 }
 
 /// Takes in a filepath as an &OsStr
@@ -101,8 +105,12 @@ fn main() {
         naive_bayes_predict(args.nb_pred.get(0).unwrap(), args.nb_pred.get(1).unwrap())
     }
 
-    if !args.bpe.is_empty() {
-        bpe_generate(args.bpe.get(0).unwrap(), args.bpe.get(1).unwrap())
+    if !args.bpe_train.is_empty() {
+        bpe_generate(args.bpe_train.get(0).unwrap(), args.bpe_train.get(1).unwrap())
+    }
+
+    if !args.bpe_tokenize.is_empty() {
+        bpe_tokenize(args.bpe_tokenize.get(0).unwrap(), args.bpe_tokenize.get(1).unwrap())
     }
 }
 
@@ -255,11 +263,16 @@ fn naive_bayes_predict(sample: &str, model: &str) {
 /// Its name will be the same as the training file with 'BPE-TOKENIZED-' appended to the front.
 /// Select the hyperparameter large enough to form word roots, small enough to separate word parts like pre/suffix.
 /// Can be measured, by percent of tokens in resulting vocab, which end in </w> end of word indicator.
-fn bpe_generate(in_file: &str, vocab_size: &str) {
+fn bpe_generate(infile: &str, vocab_size: &str) {
     let mut filepath = env::current_dir().unwrap();
     let mut savepath = env::current_dir().unwrap();
-    filepath.push(in_file);
-    savepath.push("BPE-TOKENIZED-".to_string() + in_file);
+    filepath.push(infile);
+    let string_end = &infile[infile.len() - 4..];
+    if string_end == ".csv"{
+        savepath.push("BPE-VOCAB-".to_string() + format!("{}{}", &infile[0..infile.len() - 4], ".txt").as_str());
+    } else{
+        savepath.push("BPE-VOCAB-".to_string() + infile);
+    }
 
     let ostringpath = filepath.into_os_string();
     let ostringsavepath = savepath.into_os_string();
@@ -267,10 +280,44 @@ fn bpe_generate(in_file: &str, vocab_size: &str) {
     let outvec = parse_csv_to_lines(&ostringpath)
         .unwrap_or_else(|_| error("Cannot open or parse training CSV."));
 
+    // TODO increase n max size, and convert so it can handle in bpe_training:
+    // frequency_table.len() < n.into()
     let n = vocab_size.parse::<u8>().unwrap();
     let vocab = bpe_training(outvec, n);
     println!("Lemmatized vocab: {:?}", vocab);
-    //let tokenized = bpe_encoding();
 
     save_bpe_vocab(&ostringsavepath, &vocab).unwrap_or_else(|_| error("Failed to save vocab."));
 }
+
+fn bpe_tokenize(infile: &str, vocab_file: &str) {
+    let mut filepath = env::current_dir().unwrap();
+    let mut savepath = env::current_dir().unwrap();
+    let mut vocabpath = env::current_dir().unwrap();
+
+    filepath.push(infile);
+    vocabpath.push(vocab_file);
+
+    let string_end = &infile[infile.len() - 4..];
+    if string_end == ".csv"{
+        savepath.push("BPE-TOKENIZED-".to_string() + format!("{}{}", &infile[0..infile.len() - 4], ".txt").as_str());
+    } else{
+        savepath.push("BPE-TOKENIZED-".to_string() + infile);
+    }
+
+    let ostringpath = filepath.into_os_string();
+    let ostringsavepath = savepath.into_os_string();
+    let ostring_vocab_path = vocabpath.into_os_string();
+
+    let outvec = parse_csv_to_lines(&ostringpath)
+        .unwrap_or_else(|_| error("Cannot open or parse source CSV."));
+    let vocabvec = parse_csv_to_lines(&ostring_vocab_path)
+        .unwrap_or_else(|_| error("Cannot open or parse source CSV."));
+
+
+
+    let tokenized_file = bpe_encoding(outvec, vocabvec);
+    println!("Lemmatized vocab: {:?}", tokenized_file);
+
+    save_bpe_encoding(&ostringsavepath, &tokenized_file).unwrap_or_else(|_| error("Failed to save vocab."));
+}
+
